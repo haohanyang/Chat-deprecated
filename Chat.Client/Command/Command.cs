@@ -18,6 +18,11 @@ public class JoinGroupCommand : ICommand
     public string GroupId { get; set; }
 }
 
+public class LeaveGroupCommand : ICommand
+{
+    public string GroupId { get; set; }
+}
+
 public class CreateGroupCommand : ICommand
 {
     public string GroupId { get; set; }

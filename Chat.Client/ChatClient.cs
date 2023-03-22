@@ -7,12 +7,9 @@ namespace Chat.Client;
 
 public class ChatClient
 {
-    private List<string> _messages = new List<string>();
     private string _userId;
     private HubConnection? _connection;
-
-    private readonly object _messagesLock = new object();
-
+    
     public ChatClient(string userId)
     {
         _userId = userId;
@@ -53,30 +50,28 @@ public class ChatClient
         _connection.On<Message>("ReceiveUserMessage", message =>
         {
             var newMessage = $"{message.Time} u/{message.From}:{message.Content}";
-
+            
             Console.ResetColor();
             Console.Write(ClientConfigs.SpeechBalloon);
             if (ClientConfigs.MessageColor != ConsoleColor.Black)
             {
                 Console.ForegroundColor = ClientConfigs.MessageColor;
             }
-
             Console.WriteLine(" " + newMessage);
-            if (ClientConfigs.MessageColor != ConsoleColor.Black)
-            {
-                Console.ResetColor();
-            }
         });
 
         _connection.On<Message>("ReceiveGroupMessage", message =>
         {
+         
             var newMessage = $"{message.Time} g/{message.To} u/{message.From}:{message.Content}";
-            Console.ForegroundColor = ClientConfigs.MessageColor;
             Console.ResetColor();
             Console.Write(ClientConfigs.SpeechBalloon);
-            Console.ForegroundColor = ClientConfigs.MessageColor;
+            if (ClientConfigs.MessageColor != ConsoleColor.Black)
+            {
+                Console.ForegroundColor = ClientConfigs.MessageColor;
+            }
             Console.WriteLine(" " + newMessage);
-            Console.ResetColor();
+
         });
     }
 
@@ -91,6 +86,7 @@ public class ChatClient
 
     private async Task MessageInputLoop()
     {
+        Console.WriteLine("Chat client, current user " + _userId);
         while (_connection is not null && _connection.State == HubConnectionState.Connected)
         {
             var input = Console.ReadLine();
@@ -124,6 +120,11 @@ public class ChatClient
             {
                 await JoinGroup(joinGroupCommand.GroupId);
             }
+
+            if (command is LeaveGroupCommand leaveGroupCommand)
+            {
+                await LeaveGroup(leaveGroupCommand.GroupId);
+            }
         }
     }
 
@@ -149,7 +150,7 @@ public class ChatClient
     {
         await _connection.InvokeAsync("JoinGroup", groupId);
     }
-
+    
     public async Task LeaveGroup(string groupId)
     {
         await _connection.InvokeAsync("LeaveGroup", groupId);

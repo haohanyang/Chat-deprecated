@@ -9,14 +9,18 @@ public class CommandParser
     // send u/<user-id> '<message>'
     // send g/<group-id> '<message>'
     private const string SendMessagePattern = @"^send ([ug])\/([a-zA-Z0-9\-_]+) '(.+)'$";
-
-    // Join group format:
-    // join u/<group-id>
-    private const string JoinGroupPattern = @"^join g\/([a-zA-Z0-9\-_]+)$";
-
+    
     // Create group format:
     // create u/<group-id>
     private const string CreateGroupPattern = @"^create g\/([a-zA-Z0-9\-_]+)$";
+    
+    // Join group format:
+    // join u/<group-id>
+    private const string JoinGroupPattern = @"^join g\/([a-zA-Z0-9\-_]+)$";
+    
+    // Leave group format:
+    // leave u/<group-id>
+    private const string LeaveGroupPattern = @"^leave g\/([a-zA-Z0-9\-_]+)$";
 
     private const string QuitPattern = @"^[qQ]$";
 
@@ -46,6 +50,13 @@ public class CommandParser
             var groupId = match.Groups[1].Value;
             return new JoinGroupCommand { GroupId = groupId };
         }
+        
+        match = Regex.Match(input, LeaveGroupPattern);
+        if (match.Success)
+        {
+            var groupId = match.Groups[1].Value;
+            return new LeaveGroupCommand { GroupId = groupId };
+        }
 
         match = Regex.Match(input, CreateGroupPattern);
         if (match.Success)
@@ -57,7 +68,7 @@ public class CommandParser
         match = Regex.Match(input, QuitPattern);
         if (match.Success)
         {
-            return new ExitCommand { };
+            return new ExitCommand();
         }
 
         return null;
