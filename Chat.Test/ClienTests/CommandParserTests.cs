@@ -6,50 +6,58 @@ namespace Chat.Test.ClienTests;
 
 public class CommandParserTests
 {
-    private const string SendUserCommand1 = "send u/user1 'my-message'";
-    private const string SendGroupCommand1 = "send g/this-is-my-group1 'my-message'";
-
-    private const string CreateGroupCommand1 = "create g/this-is-my-group1";
-    private const string JoinGroupCommand1 = "join g/this-is-my-group1";
-
     [Test]
-    public void SendUserCommandTest1()
+    public void LoginCommandTest()
     {
-        var command = CommandParser.parse(SendUserCommand1) as SendMessageCommand;
+        const string commandStr1 = "login abc";
+        var command1 = CommandParser.parse(commandStr1) as LoginCommand;
         Assert.Multiple(() =>
         {
-            Assert.NotNull(command);
-            Assert.That(command!.ReceiverType, Is.EqualTo(ReceiverType.User));
-            Assert.That(command.Receiver, Is.EqualTo("user1"));
-            Assert.That(command.Message, Is.EqualTo("my-message"));
+            Assert.NotNull(command1);
+            Assert.IsNull(command1.Password);
+            Assert.That(command1!.Username, Is.EqualTo("abc"));
         });
-    }
-
-    [Test]
-    public void SendGroupCommandTest1()
-    {
-        var command = CommandParser.parse(SendGroupCommand1) as SendMessageCommand;
+        
+        const string commandStr2 = "login username pass@word";
+        var command2 = CommandParser.parse(commandStr2) as LoginCommand;
         Assert.Multiple(() =>
         {
-            Assert.NotNull(command);
-            Assert.That(command!.ReceiverType, Is.EqualTo(ReceiverType.Group));
-            Assert.That(command.Receiver, Is.EqualTo("this-is-my-group1"));
-            Assert.That(command.Message, Is.EqualTo("my-message"));
+            Assert.NotNull(command2);
+            Assert.That(command2!.Username, Is.EqualTo("username"));
+            Assert.That(command2!.Password, Is.EqualTo("pass@word"));
+        });
+
+    }
+    
+    [Test]
+    public void SendCommandTest()
+    {
+        const string commandStr1 = " send   u/user1  'my-message' ";
+        var command1 = CommandParser.parse(commandStr1) as SendMessageCommand;
+        Assert.Multiple(() =>
+        {
+            Assert.NotNull(command1);
+            Assert.That(command1!.ReceiverType, Is.EqualTo(ReceiverType.User));
+            Assert.That(command1.Receiver, Is.EqualTo("user1"));
+            Assert.That(command1.Message, Is.EqualTo("my-message"));
+        });
+
+        const string commandStr2 = "send   g/group1 'this' ";
+        var command2 = CommandParser.parse(commandStr2) as SendMessageCommand;
+        Assert.Multiple(() =>
+        {
+            Assert.NotNull(command2);
+            Assert.That(command2!.ReceiverType, Is.EqualTo(ReceiverType.Group));
+            Assert.That(command2.Receiver, Is.EqualTo("group1"));
+            Assert.That(command2.Message, Is.EqualTo("this"));
         });
     }
-
+    
     [Test]
-    public void CreateGroupCommandTest1()
+    public void CreateGroupCommandTest()
     {
-        var command = CommandParser.parse(CreateGroupCommand1) as CreateGroupCommand;
-        Assert.NotNull(command);
-        Assert.That(command!.GroupId, Is.EqualTo("this-is-my-group1"));
-    }
-
-    [Test]
-    public void JoinGroupCommandTest1()
-    {
-        var command = CommandParser.parse(JoinGroupCommand1) as JoinGroupCommand;
+        const string commandStr = "create  g/this-is-my-group1 ";
+        var command = CommandParser.parse(commandStr) as CreateGroupCommand;
         Assert.NotNull(command);
         Assert.That(command!.GroupId, Is.EqualTo("this-is-my-group1"));
     }

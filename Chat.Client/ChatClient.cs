@@ -36,7 +36,7 @@ public class ChatClient
         await Console.Error.WriteLineAsync("Username or password is incorrect");
         return null;
     }
-
+    
     private void RegisterCallbacks()
     {
         _connection!.On<Message>(ChatEvents.ReceiveMessage, message =>
@@ -62,6 +62,8 @@ public class ChatClient
         });
     }
     
+    // Try to login and connect to chat hub with credentials.
+    // Set client's token and username if connection succeeds.
     private bool InitConnection(string? username, string? password)
     {
         if (username == null || password == null)
@@ -101,6 +103,7 @@ public class ChatClient
         return _username != null && _token != null;
     }
 
+    // Return an http client with bearer token in the header
     private HttpClient GetHttpClient()
     {
         var httpClient = new HttpClient();
@@ -108,7 +111,7 @@ public class ChatClient
             "Bearer", _token);
         return httpClient;
     }
-
+    
     private async Task MainLoop()
     {
         while (true)
@@ -129,11 +132,15 @@ public class ChatClient
                     Console.WriteLine("You have already logged in");
                     continue;
                 }
+
+                var password = loginCommand.Password;
+                if (password == null)
+                {
+                    Console.Write("Password:");
+                    password = Console.ReadLine();
+                }
                 
-                Console.Write("Password?");
-                var password = Console.ReadLine();
                 var loginSuccess = InitConnection(loginCommand.Username, password);
-                
                 if (!loginSuccess)
                 {
                     Console.WriteLine("Username or password is incorrect");

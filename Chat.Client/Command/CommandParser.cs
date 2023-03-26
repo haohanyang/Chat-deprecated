@@ -5,27 +5,29 @@ namespace Chat.Client.Command;
 
 public class CommandParser
 {
-
-    private const string LoginPattern1 = @"^login ([a-zA-Z0-9\-_]+)$"; 
-    private const string LoginPattern2 = @"^login ([a-zA-Z0-9\-_]+) ([a-zA-Z0-9\-_]+)$"; 
+    // Login format
+    // login <username>
+    // login <username> <password>
+    private const string LoginPattern1 = @"^login\s+([a-zA-Z0-9\-_]+)$"; 
+    private const string LoginPattern2 = @"^login\s+([a-zA-Z0-9\-_]+)\s+(\S+)$"; 
     // Send message format:
     // send u/<user-id> '<message>'
     // send g/<group-id> '<message>'
-    private const string SendMessagePattern = @"^send ([ug])\/([a-zA-Z0-9\-_]+) '(.+)'$";
+    private const string SendMessagePattern = @"^send\s+([ug])\/([a-zA-Z0-9\-_]+)\s+'(.+)'$";
     
     // Create group format:
     // create u/<group-id>
-    private const string CreateGroupPattern = @"^create g\/([a-zA-Z0-9\-_]+)$";
+    private const string CreateGroupPattern = @"^create\s+g\/([a-zA-Z0-9\-_]+)$";
     
     // Join group format:
     // join u/<group-id>
-    private const string JoinGroupPattern = @"^join g\/([a-zA-Z0-9\-_]+)$";
+    private const string JoinGroupPattern = @"^join\s+g\/([a-zA-Z0-9\-_]+)$";
     
     // Leave group format:
     // leave u/<group-id>
-    private const string LeaveGroupPattern = @"^leave g\/([a-zA-Z0-9\-_]+)$";
+    private const string LeaveGroupPattern = @"^leave\s+g\/([a-zA-Z0-9\-_]+)$";
 
-    private const string QuitPattern = @"^[qQ]$";
+    private const string QuitPattern = @"^([qQ]|exit|quit)$";
 
 
     public static ICommand? parse(string? input)
