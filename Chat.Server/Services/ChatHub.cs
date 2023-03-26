@@ -175,70 +175,71 @@ public class ChatHub : Hub<IChatClient>
 
     public async Task LeaveGroup(string groupId)
     {
-        // var username = Context.UserIdentifier!;
-        //
-        // RpcResponse? response = null;
-        // bool error = false;
-        //
-        // lock (_groups)
-        // {
-        //     if (_groups.TryGetValue(groupId, out var group))
-        //     {
-        //         lock (group.Members)
-        //         {
-        //             if (group.RemoveMember(username))
-        //             {
-        //                 // User is not in the group
-        //                 response = new RpcResponse(RpcResponseStatus.Warning, "You are not in g/" + groupId);
-        //             }
-        //         }
-        //     }
-        //     else
-        //     {
-        //         response = new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " doesn't exist");
-        //         error = true;
-        //     }
-        //
-        //     if (!error)
-        //     {
-        //         if (_users.TryGetValue(username, out var user))
-        //         {
-        //             lock (user.Groups)
-        //             {
-        //                 if (!user.LeaveGroup(groupId))
-        //                 {
-        //                     // User is not in the group
-        //                     if (response == null)
-        //                     {
-        //                         // Inconsistent
-        //                     }
-        //                     response = new RpcResponse(RpcResponseStatus.Warning, "You are not in g/" + groupId);
-        //                 }
-        //             }
-        //         }
-        //         else
-        //         {
-        //             response = new RpcResponse(RpcResponseStatus.Error, "u/" + username + " doesn't exist");
-        //             error = true;
-        //         }
-        //     }
-        // }
-        //
-        // if (response == null)
-        // {
-        //     await SendResponse(username, new RpcResponse(RpcResponseStatus.Success, "You have left g/" + groupId));
-        //     // Remove user from collections
-        //     await Task.WhenAll(
-        //         GetUser(username).Connections.Select(connectionId =>
-        //             Groups.RemoveFromGroupAsync(connectionId, groupId)));
-        //     
-        //     var notification = new Notification(DateTime.Now, "u/" + username + " left the group");
-        //     await Clients.Group(groupId).ReceiveNotification(notification);
-        // }
-        // else
-        // {
-        //     await SendResponse(username, response);
-        // }
+        var username = Context.UserIdentifier!;
+        
+        RpcResponse? response = null;
+        bool error = false;
+        
+        lock (_groups) lock(_users)
+        {
+            if (_groups.TryGetValue(groupId, out var members))
+            {
+                lock (members)
+                {
+                    if (!members.Remove(username))
+                    {
+                        // User is not in the group
+                        response = new RpcResponse(RpcResponseStatus.Warning, "You are not in g/" + groupId);
+                    }
+                }
+            }
+            else
+            {
+                response = new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " doesn't exist");
+                error = true;
+            }
+        
+            if (!error)
+            {
+                if (_users.TryGetValue(username, out var groups))
+                {
+                    lock (groups)
+                    {
+                        if (!groups.Remove(groupId))
+                        {
+                            // User is not in the group
+                            if (response == null)
+                            {
+                                // Inconsistent
+                            }
+                            response = new RpcResponse(RpcResponseStatus.Warning, "You are not in g/" + groupId);
+                        }
+                    }
+                }
+                else
+                {
+                    response = new RpcResponse(RpcResponseStatus.Error, "u/" + username + " doesn't exist");
+                    error = true;
+                }
+            }
+        }
+        
+        if (response == null)
+        {
+            // No error or warning
+            await SendResponse(username, new RpcResponse(RpcResponseStatus.Success, "You have left g/" + groupId));
+            // Remove user from collections
+            await Task.WhenAll(
+                GetConnections(username).Select(connectionId =>
+                    Groups.RemoveFromGroupAsync(connectionId, groupId)));
+            
+            var notification = new Notification(DateTime.Now, "u/" + username + " left the group");
+            await Clients.Group(groupId).ReceiveNotification(notification);
+        }
+        else
+        {
+            await SendResponse(username, response);
+        }
     }
 
     public async Task JoinGroup(string groupId)
@@ -297,7 +298,6 @@ public class ChatHub : Hub<IChatClient>
             // No error or warning
             var notification = new Notification(DateTime.Now, "u/" + username + " joined the group");
             await Clients.Group(groupId).ReceiveNotification(notification);
-            var cnn = GetConnections(username);
             await Task.WhenAll(
                 GetConnections(username).Select(connectionId =>
                     Groups.AddToGroupAsync(connectionId, groupId)));
