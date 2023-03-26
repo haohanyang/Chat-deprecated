@@ -5,6 +5,9 @@ namespace Chat.Client.Command;
 
 public class CommandParser
 {
+
+    private const string LoginPattern1 = @"^login ([a-zA-Z0-9\-_]+)$"; 
+    private const string LoginPattern2 = @"^login ([a-zA-Z0-9\-_]+) ([a-zA-Z0-9\-_]+)$"; 
     // Send message format:
     // send u/<user-id> '<message>'
     // send g/<group-id> '<message>'
@@ -25,9 +28,30 @@ public class CommandParser
     private const string QuitPattern = @"^[qQ]$";
 
 
-    public static ICommand? parse(String input)
+    public static ICommand? parse(string? input)
     {
-        var match = Regex.Match(input, SendMessagePattern);
+        if (input == null)
+        {
+            return null;
+        }
+
+        input = input.Trim();
+        var match = Regex.Match(input, LoginPattern1);
+        if (match.Success)
+        {
+            var username = match.Groups[1].Value;
+            return new LoginCommand { Username = username };
+        }
+        
+        match = Regex.Match(input, LoginPattern2);
+        if (match.Success)
+        {
+            var username = match.Groups[1].Value;
+            var password = match.Groups[2].Value;
+            return new LoginCommand { Username = username, Password = password};
+        }
+        
+        match = Regex.Match(input, SendMessagePattern);
         if (match.Success)
         {
             var receiverType = match.Groups[1].Value;

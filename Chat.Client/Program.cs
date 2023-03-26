@@ -1,5 +1,4 @@
 ﻿using System.CommandLine;
-using System.Text;
 using Chat.Client;
 
 var usernameOption = new Option<String>(
@@ -13,7 +12,8 @@ rootCommand.AddOption(usernameOption);
 
 rootCommand.SetHandler(async (username) =>
 {
-    var client = new ChatClient(username);
+    var baseUrl = "http://localhost:5101";
+    var client = new ChatClient(baseUrl);
     await client.Run();
 }, usernameOption);
 
