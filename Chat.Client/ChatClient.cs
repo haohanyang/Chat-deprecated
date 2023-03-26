@@ -49,6 +49,12 @@ public class ChatClient
             Console.WriteLine(" " + stringMessage);
         });
 
+        _connection!.On<Notification>(ChatEvents.ReceiveNotification, notification =>
+        {
+            Console.Write(new Rune(0x2139));
+            Console.WriteLine(notification.Content);
+        });
+
         _connection?.On<RpcResponse>(ChatEvents.RpcResponse, response =>
         {
             if (response.Status == RpcResponseStatus.Error)
@@ -261,7 +267,6 @@ public class ChatClient
     public async Task Run()
     {
         Console.WriteLine("Chat client");
-        // InitConnection("as2asfM", "asf-0PA>f");
         await MainLoop();
     }
 }
