@@ -1,10 +1,8 @@
-using System.Security.Claims;
-
+using System.Collections.Concurrent;
 using Chat.Common;
-using Chat.Server.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.IdentityModel.Tokens;
+
 
 namespace Chat.Server.Services;
 
@@ -22,12 +20,16 @@ public class ChatHub : Hub<IChatClient>
     private static readonly Dictionary<string, HashSet<string>> _groups = new();
     private static readonly Dictionary<string, HashSet<string>> _users = new();
     private static readonly Dictionary<string, HashSet<string>> _connections = new();
+    private static readonly ConcurrentQueue<Message> _messages = new();
+    
     //private readonly IDatabaseService _databaseService;
+    
+    // Debug only
     public Dictionary<string, HashSet<string>> GP => _groups;
-
     public Dictionary<string, HashSet<string>> US => _users;
-
     public Dictionary<string, HashSet<string>> CN => _connections;
+    public ConcurrentQueue<Message> MSG => _messages;
+    
     // public ChatHub(IDatabaseService databaseService)
     // {
     //     _databaseService = databaseService;
@@ -322,6 +324,9 @@ public class ChatHub : Hub<IChatClient>
         if (await GuardUser(receiver) != null)
         {
             var message = new Message(username, receiver, DateTime.Now, ReceiverType.User, content);
+            // Add to message queue
+            _messages.Enqueue(message);
+            
             await Clients.User(receiver).ReceiveMessage(message);
         }
     }
@@ -349,6 +354,10 @@ public class ChatHub : Hub<IChatClient>
         }
         Console.WriteLine(_connections[username].Count);
         var message = new Message(username, groupId, DateTime.Now, ReceiverType.Group, content);
+        
+        // Add to message queue
+        _messages.Enqueue(message);
+      
         await Clients.Group(groupId).ReceiveMessage(message);
     }
 }
