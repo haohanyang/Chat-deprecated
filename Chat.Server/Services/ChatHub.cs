@@ -16,7 +16,7 @@ public interface IChatClient
 [Authorize]
 public class ChatHub : Hub<IChatClient>
 {
-
+    
     private static readonly Dictionary<string, HashSet<string>> _groups = new();
     private static readonly Dictionary<string, HashSet<string>> _users = new();
     private static readonly Dictionary<string, HashSet<string>> _connections = new();
@@ -104,7 +104,6 @@ public class ChatHub : Hub<IChatClient>
 
                 if (!_connections.TryGetValue(username, out var connections))
                 {
-                    connections = new();
                     _connections.Add(username, new HashSet<string>());
                 }
 

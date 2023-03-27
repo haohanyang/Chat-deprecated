@@ -5,6 +5,12 @@ namespace Chat.Client.Command;
 
 public class CommandParser
 {
+    // Register format 
+    // Register <username>
+    // Register <username> <password>
+    private const string RegisterPattern1 = @"^register\s+([a-zA-Z0-9\-_]+)$"; 
+    private const string RegisterPattern2 = @"^register\s+([a-zA-Z0-9\-_]+)\s+(\S+)$"; 
+    
     // Login format
     // login <username>
     // login <username> <password>
@@ -38,7 +44,23 @@ public class CommandParser
         }
 
         input = input.Trim();
-        var match = Regex.Match(input, LoginPattern1);
+        
+        var match = Regex.Match(input, RegisterPattern1);
+        if (match.Success)
+        {
+            var username = match.Groups[1].Value;
+            return new RegisterCommand { Username = username };
+        }
+        
+        match = Regex.Match(input, RegisterPattern2);
+        if (match.Success)
+        {
+            var username = match.Groups[1].Value;
+            var password = match.Groups[2].Value;
+            return new RegisterCommand { Username = username, Password = password};
+        }
+        
+        match = Regex.Match(input, LoginPattern1);
         if (match.Success)
         {
             var username = match.Groups[1].Value;

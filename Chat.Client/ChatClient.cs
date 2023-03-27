@@ -30,11 +30,28 @@ public class ChatClient
         if (response.IsSuccessStatusCode)
         {
             var authResponse = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
-            return authResponse.Token;
+            return authResponse!.Token;
         }
         
         await Console.Error.WriteLineAsync("Username or password is incorrect");
         return null;
+    }
+    
+    private static async Task Register(string username, string password)
+    {
+        using var httpClient = new HttpClient();
+        var request = new AuthenticationRequest { Username = username, Password = password };
+        var response = await httpClient.PostAsJsonAsync("http://localhost:5101/register",
+            request);
+        
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Account registered");
+            return;
+        }
+
+        var errorMessage = await response.Content.ReadAsStringAsync();
+        await Console.Error.WriteLineAsync("Registration failed:\n" + errorMessage);
     }
     
     private void RegisterCallbacks()
@@ -113,8 +130,11 @@ public class ChatClient
     private HttpClient GetHttpClient()
     {
         var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Bearer", _token);
+        if (IsAuthenticated())
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                "Bearer", _token);
+        }
         return httpClient;
     }
     
@@ -129,6 +149,26 @@ public class ChatClient
             {
                 Console.WriteLine("Invalid input");
                 continue;
+            }
+
+            if (command is RegisterCommand registerCommand)
+            {
+                var password = registerCommand.Password;
+                if (password == null)
+                {
+                    Console.Write("Password:");
+                    password = Console.ReadLine();
+                    
+                    Console.Write("Repeat:");
+                    var passwordRepeated = Console.ReadLine();
+                    if (password != passwordRepeated)
+                    {
+                        Console.WriteLine("Passwords mismatch");
+                        continue;
+                    }
+                }
+                
+                await Register(registerCommand.Username, password!);
             }
 
             if (command is LoginCommand loginCommand)

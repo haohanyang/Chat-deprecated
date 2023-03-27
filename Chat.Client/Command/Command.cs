@@ -6,6 +6,12 @@ public interface ICommand
 {
 }
 
+public class RegisterCommand : ICommand
+{
+    public string Username { get; init; }
+    public string? Password { get; init; }
+}
+
 public class LoginCommand : ICommand
 {
     public string Username { get; init; }

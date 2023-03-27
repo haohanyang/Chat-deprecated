@@ -1,6 +1,3 @@
-// https://github.com/nhooyr/websocket/blob/master/examples/chat/chat.go#L177
-// https://medium.com/geekculture/how-to-add-jwt-authentication-to-an-asp-net-core-api-84e469e9f019
-
 using System.Security.Claims;
 using Chat.Common;
 using Chat.Server.Data;
@@ -40,7 +37,7 @@ public class ChatServerController : Controller
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest ("Model is invalid");
+            return BadRequest ("Model state is invalid");
         }
 
         var result = await _userManager.CreateAsync(
@@ -58,7 +55,7 @@ public class ChatServerController : Controller
         foreach (var error in result.Errors) {
             ModelState.AddModelError(error.Code, error.Description);
         }
-        return BadRequest(ModelState);
+        return BadRequest(String.Join("\n", result.Errors.Select(e => e.Description)));
     }
 
     [HttpPost("login")]
@@ -66,7 +63,7 @@ public class ChatServerController : Controller
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest("Model state is invalid");
         }
         
         var managedUser = await _userManager.FindByNameAsync(request.Username);
@@ -80,13 +77,7 @@ public class ChatServerController : Controller
         {
             return BadRequest("Username or password is incorrect");
         }
-
-        // var dbUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == request.Username);
-        // if (dbUser == null)
-        // {
-        //     return BadRequest("User " + request.Username + " doesn't exist");
-        // }
-
+        
         var accessToken = _authenticationService.CreateToken(managedUser);
         if (accessToken == null)
         {
