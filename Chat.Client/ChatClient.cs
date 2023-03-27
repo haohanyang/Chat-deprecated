@@ -20,6 +20,21 @@ public class ChatClient
         _baseUrl = baseUrl;
     }
 
+    private static void PrintError(string message)
+    {
+        Console.WriteLine($"{Colors.RED}{message}{Colors.NORMAL}");
+    }
+    
+    private static void PrintWarning(string message)
+    {
+        Console.WriteLine($"{Colors.YELLOW}{message}{Colors.NORMAL}");
+    }
+    
+    private static void PrintSuccess(string message)
+    {
+        Console.WriteLine($"{Colors.GREEN}{message}{Colors.NORMAL}");
+    }
+
     private static async Task<string?> Login(string username, string password)
     {
         using var httpClient = new HttpClient();
@@ -32,8 +47,6 @@ public class ChatClient
             var authResponse = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
             return authResponse!.Token;
         }
-        
-        await Console.Error.WriteLineAsync("Username or password is incorrect");
         return null;
     }
     
@@ -51,7 +64,7 @@ public class ChatClient
         }
 
         var errorMessage = await response.Content.ReadAsStringAsync();
-        await Console.Error.WriteLineAsync("Registration failed:\n" + errorMessage);
+        PrintError(errorMessage);
     }
     
     private void RegisterCallbacks()
@@ -76,14 +89,19 @@ public class ChatClient
         {
             if (response.Status == RpcResponseStatus.Error)
             {
-                Console.Error.WriteLine(response.Message);
+                PrintError(response.Message);
+            }
+            else if(response.Status == RpcResponseStatus.Warning)
+            {
+                PrintWarning(response.Message);
             }
             else
             {
-                Console.WriteLine(response.Message);
+                PrintSuccess(response.Message);
             }
         });
     }
+    
     
     // Try to login and connect to chat hub with credentials.
     // Set client's token and username if connection succeeds.
@@ -163,7 +181,7 @@ public class ChatClient
                     var passwordRepeated = Console.ReadLine();
                     if (password != passwordRepeated)
                     {
-                        Console.WriteLine("Passwords mismatch");
+                        PrintError("Passwords mismatch");
                         continue;
                     }
                 }
@@ -175,7 +193,7 @@ public class ChatClient
             {
                 if (IsAuthenticated())
                 {
-                    Console.WriteLine("You have already logged in");
+                    PrintWarning("You have already logged in");
                     continue;
                 }
 
@@ -189,7 +207,7 @@ public class ChatClient
                 var loginSuccess = InitConnection(loginCommand.Username, password);
                 if (!loginSuccess)
                 {
-                    Console.WriteLine("Username or password is incorrect");
+                    PrintError("Username or password is incorrect");
                     continue;
                 }
                 
@@ -198,11 +216,11 @@ public class ChatClient
                 {
                     RegisterCallbacks();
                     await Connect();
-                    Console.WriteLine("Login succeeds");
+                    PrintSuccess("Login succeeds");
                 }
                 catch (Exception e)
                 {
-                    await Console.Error.WriteLineAsync(e.Message);
+                    PrintError(e.Message);
                 }
             }
             
@@ -242,7 +260,7 @@ public class ChatClient
     {
         if (!IsConnected() || !IsAuthenticated())
         {
-            await Console.Error.WriteLineAsync("You haven't logged in");
+            PrintError("You haven't logged in");
             return;
         }
         
@@ -259,17 +277,10 @@ public class ChatClient
 
     private async Task CreateGroup(string groupId)
     {
-        // using var httpClient = GetHttpClient();
-        // var response = await httpClient.PostAsJsonAsync(_baseUrl + "/create_group", groupId);
-        //
-        // if (!response.IsSuccessStatusCode)
-        // {
-        //     await Console.Error.WriteLineAsync(response.Content.ReadAsStringAsync().Result);
-        // }
         
         if (!IsConnected() || !IsAuthenticated())
         {
-            await Console.Error.WriteLineAsync("You haven't logged in");
+            PrintError("You haven't logged in");
             return;
         }
         await _connection!.InvokeAsync("CreateGroup", groupId);
@@ -277,17 +288,10 @@ public class ChatClient
 
     private async Task JoinGroup(string groupId)
     {
-        // using var httpClient = GetHttpClient();
-        // var response = await httpClient.PostAsJsonAsync(_baseUrl + "/join_group", groupId);
-        //
-        // if (!response.IsSuccessStatusCode)
-        // {
-        //     await Console.Error.WriteLineAsync(response.Content.ReadAsStringAsync().Result);
-        // }
         
         if (!IsConnected() || !IsAuthenticated())
         {
-            await Console.Error.WriteLineAsync("You haven't logged in");
+            PrintError("You haven't logged in");
             return;
         }
         
@@ -298,7 +302,7 @@ public class ChatClient
     {
         if (!IsConnected() || !IsAuthenticated())
         {
-            await Console.Error.WriteLineAsync("You haven't logged in");
+            PrintError("You haven't logged in");
             return;
         }
         await _connection!.InvokeAsync("LeaveGroup", groupId);
