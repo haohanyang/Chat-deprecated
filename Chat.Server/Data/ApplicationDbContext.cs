@@ -11,6 +11,11 @@ public class ApplicationDbContext : IdentityUserContext<ApplicationUser>
     {
     }
 
+    public DbSet<Group> Groups { get; set; }
+    public DbSet<UserMessage> UserMessages { get; set; }
+    public DbSet<GroupMessage> GroupMessages { get; set; }
+    public DbSet<Membership> Memberships { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
         options.UseSqlite("Data Source=:memory;");
@@ -19,7 +24,7 @@ public class ApplicationDbContext : IdentityUserContext<ApplicationUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ApplicationUser>().HasMany(e => e.Groups)
-            .WithMany(e => e.Members);
+            .WithMany(e => e.Members).UsingEntity<Membership>();
         modelBuilder.Entity<ApplicationUser>().HasMany(e => e.UserMessagesSent)
             .WithOne(e => e.Sender).HasForeignKey(e => e.SenderId);
         modelBuilder.Entity<ApplicationUser>().HasMany(e => e.UserMessagesReceived)

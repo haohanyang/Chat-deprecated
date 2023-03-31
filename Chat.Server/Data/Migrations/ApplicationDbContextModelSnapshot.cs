@@ -17,21 +17,6 @@ namespace Chat.Server.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.4");
 
-            modelBuilder.Entity("ApplicationUserGroup", b =>
-                {
-                    b.Property<string>("GroupsId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("MembersId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("GroupsId", "MembersId");
-
-                    b.HasIndex("MembersId");
-
-                    b.ToTable("ApplicationUserGroup");
-                });
-
             modelBuilder.Entity("Chat.Server.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -103,7 +88,7 @@ namespace Chat.Server.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Group");
+                    b.ToTable("Groups");
                 });
 
             modelBuilder.Entity("Chat.Server.Models.GroupMessage", b =>
@@ -133,7 +118,26 @@ namespace Chat.Server.Data.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("GroupMessage");
+                    b.ToTable("GroupMessages");
+                });
+
+            modelBuilder.Entity("Chat.Server.Models.Membership", b =>
+                {
+                    b.Property<string>("GroupId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MembersId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MemberId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("GroupId", "MembersId");
+
+                    b.HasIndex("MembersId");
+
+                    b.ToTable("Memberships");
                 });
 
             modelBuilder.Entity("Chat.Server.Models.UserMessage", b =>
@@ -163,7 +167,7 @@ namespace Chat.Server.Data.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("UserMessage");
+                    b.ToTable("UserMessages");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -230,21 +234,6 @@ namespace Chat.Server.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ApplicationUserGroup", b =>
-                {
-                    b.HasOne("Chat.Server.Models.Group", null)
-                        .WithMany()
-                        .HasForeignKey("GroupsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Chat.Server.Models.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("MembersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Chat.Server.Models.GroupMessage", b =>
                 {
                     b.HasOne("Chat.Server.Models.Group", "Receiver")
@@ -262,6 +251,21 @@ namespace Chat.Server.Data.Migrations
                     b.Navigation("Receiver");
 
                     b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("Chat.Server.Models.Membership", b =>
+                {
+                    b.HasOne("Chat.Server.Models.Group", null)
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Chat.Server.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("MembersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Chat.Server.Models.UserMessage", b =>
