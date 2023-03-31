@@ -35,41 +35,81 @@ public class ChatClient
         Console.WriteLine($"{Colors.GREEN}{message}{Colors.NORMAL}");
     }
 
-    private static async Task<string?> Login(string username, string password)
+    private async Task<string?> GetToken(string username, string password)
     {
         using var httpClient = new HttpClient();
         var request = new AuthenticationRequest { Username = username, Password = password };
-        var response = await httpClient.PostAsJsonAsync("http://localhost:5101/login",
+        var response = await httpClient.PostAsJsonAsync(_baseUrl + "/login",
             request);
         
         if (response.IsSuccessStatusCode)
         {
             var authResponse = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
-            return authResponse!.Token;
+            return authResponse?.Token;
         }
+
         return null;
     }
+
+    private async Task Login(string username, string password)
+    {
+        try
+        {
+            var token = await GetToken(username, password);
+            if (token == null)
+            {
+                PrintError("login error:invalid credential");
+            }
+
+            _token = token;
+            _username = username;
+            
+            _connection = new HubConnectionBuilder().WithUrl(_baseUrl + "/chat", options =>
+                options.AccessTokenProvider = () =>
+                    Task.FromResult(GetToken(username, password).Result)
+            ).Build();
+            
+            // Subscribe
+            Subscribe(_connection);
+            // Connect to the hub
+            await _connection.StartAsync();
+            PrintSuccess("ok");
+        }
+        catch (Exception e)
+        {
+            PrintError("login error:"+e.Message);
+        }
+    }
     
-    private static async Task Register(string username, string password)
+    
+    private async Task Register(string username, string password)
     {
         using var httpClient = new HttpClient();
         var request = new AuthenticationRequest { Username = username, Password = password };
-        var response = await httpClient.PostAsJsonAsync("http://localhost:5101/register",
+        var response = await httpClient.PostAsJsonAsync( _baseUrl + "/register",
             request);
         
         if (response.IsSuccessStatusCode)
         {
-            Console.WriteLine("Account registered");
+            Console.WriteLine("ok");
             return;
         }
 
         var errorMessage = await response.Content.ReadAsStringAsync();
-        PrintError(errorMessage);
+        PrintError("error:" + errorMessage);
+    }
+
+    private async Task Exit()
+    {
+        if (_connection != null)
+        {
+            await _connection.StopAsync();
+        }
     }
     
-    private void RegisterCallbacks()
+    private static void Subscribe(HubConnection connection)
     {
-        _connection!.On<Message>(ChatEvents.ReceiveMessage, message =>
+        connection.On<Message>(ChatEvents.ReceiveMessage, message =>
         {
             var stringMessage = message.Type == ReceiverType.User ? 
                 $"{message.Time} u/{message.From}:{message.Content}" : 
@@ -79,59 +119,27 @@ public class ChatClient
             Console.WriteLine(" " + stringMessage);
         });
 
-        _connection!.On<Notification>(ChatEvents.ReceiveNotification, notification =>
+        connection.On<Notification>(ChatEvents.ReceiveNotification, notification =>
         {
             Console.Write(new Rune(0x2139));
             Console.WriteLine(notification.Content);
         });
 
-        _connection?.On<RpcResponse>(ChatEvents.RpcResponse, response =>
+        connection.On<RpcResponse>(ChatEvents.RpcResponse, response =>
         {
             if (response.Status == RpcResponseStatus.Error)
             {
-                PrintError(response.Message);
+                PrintError("error:"+response.Message);
             }
             else if(response.Status == RpcResponseStatus.Warning)
             {
-                PrintWarning(response.Message);
+                PrintWarning("warning:" + response.Message);
             }
             else
             {
-                PrintSuccess(response.Message);
+                PrintSuccess("ok");
             }
         });
-    }
-    
-    
-    // Try to login and connect to chat hub with credentials.
-    // Set client's token and username if connection succeeds.
-    private bool InitConnection(string? username, string? password)
-    {
-        if (username == null || password == null)
-        {
-            return false;
-        }
-        var token = Login(username, password);
-        _connection = new HubConnectionBuilder().WithUrl(_baseUrl + "/chat", options => 
-            options.AccessTokenProvider = () => 
-                Task.FromResult(token.Result)
-            ).Build();
-        
-        if (token.Result == null)
-        {
-            return false;
-        }
-        _token = token.Result;
-        _username = username;
-        return true;
-    }
-
-    private async Task Connect()
-    {
-        if (_connection != null)
-        {
-            await _connection.StartAsync();
-        }
     }
 
     private bool IsConnected()
@@ -143,6 +151,7 @@ public class ChatClient
     {
         return _username != null && _token != null;
     }
+    
 
     // Return an http client with bearer token in the header
     private HttpClient GetHttpClient()
@@ -161,7 +170,7 @@ public class ChatClient
         while (true)
         {
             var input = Console.ReadLine();
-            var command = CommandParser.parse(input);
+            var command = CommandParser.Parse(input);
             
             if (command == null)
             {
@@ -172,64 +181,18 @@ public class ChatClient
             if (command is RegisterCommand registerCommand)
             {
                 var password = registerCommand.Password;
-                if (password == null)
-                {
-                    Console.Write("Password:");
-                    password = Console.ReadLine();
-                    
-                    Console.Write("Repeat:");
-                    var passwordRepeated = Console.ReadLine();
-                    if (password != passwordRepeated)
-                    {
-                        PrintError("Passwords mismatch");
-                        continue;
-                    }
-                }
-                
                 await Register(registerCommand.Username, password!);
             }
 
             if (command is LoginCommand loginCommand)
             {
-                if (IsAuthenticated())
-                {
-                    PrintWarning("You have already logged in");
-                    continue;
-                }
-
-                var password = loginCommand.Password;
-                if (password == null)
-                {
-                    Console.Write("Password:");
-                    password = Console.ReadLine();
-                }
-                
-                var loginSuccess = InitConnection(loginCommand.Username, password);
-                if (!loginSuccess)
-                {
-                    PrintError("Username or password is incorrect");
-                    continue;
-                }
-                
-                // Connect to hub server
-                try
-                {
-                    RegisterCallbacks();
-                    await Connect();
-                    PrintSuccess("Login succeeds");
-                }
-                catch (Exception e)
-                {
-                    PrintError(e.Message);
-                }
+                await Login(loginCommand.Username, loginCommand.Password);
             }
             
             if (command is ExitCommand _)
             {
-                if (IsConnected())
-                {
-                    await _connection!.StopAsync();
-                }
+                await Exit();
+                Console.WriteLine("bye");
                 break;
             }
             
