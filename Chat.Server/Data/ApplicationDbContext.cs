@@ -1,18 +1,11 @@
 using Chat.Server.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+
 namespace Chat.Server.Data;
 
-public class ApplicationDbContext : IdentityUserContext<IdentityUser>
+public class ApplicationDbContext : IdentityUserContext<ApplicationUser>
 {
-
-    public DbSet<Group> Groups { get; set; }
-    public DbSet<UserMessage> UserMessages { get; set; }
-    public DbSet<GroupMessage> GroupMessages { get; set; }
-    public DbSet<Member> Members { get; set; }
-    public DbSet<Membership> Memberships { get; set; }
-
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
@@ -25,15 +18,14 @@ public class ApplicationDbContext : IdentityUserContext<IdentityUser>
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        
-        modelBuilder.Entity<Group>().ToTable("Group");
-        modelBuilder.Entity<Member>().ToTable("Member");
-        
-        modelBuilder.Entity<Membership>().Property(e => e.MembershipId).ValueGeneratedOnAdd();
-        modelBuilder.Entity<Membership>().ToTable("Membership");
-        modelBuilder.Entity<UserMessage>().ToTable("UserMessage");
-        modelBuilder.Entity<GroupMessage>().ToTable("GroupMessage");
+        modelBuilder.Entity<ApplicationUser>().HasMany(e => e.Groups)
+            .WithMany(e => e.Members);
+        modelBuilder.Entity<ApplicationUser>().HasMany(e => e.UserMessagesSent)
+            .WithOne(e => e.Sender).HasForeignKey(e => e.SenderId);
+        modelBuilder.Entity<ApplicationUser>().HasMany(e => e.UserMessagesReceived)
+            .WithOne(e => e.Receiver).HasForeignKey(e => e.ReceiverId);
+        modelBuilder.Entity<ApplicationUser>().HasMany(e => e.GroupMessagesSent)
+            .WithOne(e => e.Sender).HasForeignKey(e => e.SenderId);
         base.OnModelCreating(modelBuilder);
     }
-
 }

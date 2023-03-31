@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Chat.Server.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -40,22 +40,11 @@ namespace Chat.Server.Data.Migrations
                 name: "Group",
                 columns: table => new
                 {
-                    GroupId = table.Column<string>(type: "TEXT", nullable: false)
+                    Id = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Group", x => x.GroupId);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Member",
-                columns: table => new
-                {
-                    MemberId = table.Column<string>(type: "TEXT", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Member", x => x.MemberId);
+                    table.PrimaryKey("PK_Group", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -120,83 +109,87 @@ namespace Chat.Server.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "GroupMessage",
-                columns: table => new
-                {
-                    GroupMessageId = table.Column<string>(type: "TEXT", nullable: false),
-                    FromId = table.Column<string>(type: "TEXT", nullable: false),
-                    ToId = table.Column<string>(type: "TEXT", nullable: false),
-                    Content = table.Column<string>(type: "TEXT", nullable: false),
-                    Time = table.Column<DateTime>(type: "TEXT", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GroupMessage", x => x.GroupMessageId);
-                    table.ForeignKey(
-                        name: "FK_GroupMessage_Group_ToId",
-                        column: x => x.ToId,
-                        principalTable: "Group",
-                        principalColumn: "GroupId",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_GroupMessage_Member_FromId",
-                        column: x => x.FromId,
-                        principalTable: "Member",
-                        principalColumn: "MemberId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Membership",
-                columns: table => new
-                {
-                    MembershipId = table.Column<string>(type: "TEXT", nullable: false),
-                    MemberId = table.Column<string>(type: "TEXT", nullable: false),
-                    GroupId = table.Column<string>(type: "TEXT", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Membership", x => x.MembershipId);
-                    table.ForeignKey(
-                        name: "FK_Membership_Group_GroupId",
-                        column: x => x.GroupId,
-                        principalTable: "Group",
-                        principalColumn: "GroupId",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Membership_Member_MemberId",
-                        column: x => x.MemberId,
-                        principalTable: "Member",
-                        principalColumn: "MemberId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "UserMessage",
                 columns: table => new
                 {
-                    UserMessageId = table.Column<string>(type: "TEXT", nullable: false),
-                    FromId = table.Column<string>(type: "TEXT", nullable: false),
-                    ToId = table.Column<string>(type: "TEXT", nullable: false),
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    SenderId = table.Column<string>(type: "TEXT", nullable: false),
+                    ReceiverId = table.Column<string>(type: "TEXT", nullable: false),
                     Content = table.Column<string>(type: "TEXT", nullable: false),
                     Time = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserMessage", x => x.UserMessageId);
+                    table.PrimaryKey("PK_UserMessage", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserMessage_Member_FromId",
-                        column: x => x.FromId,
-                        principalTable: "Member",
-                        principalColumn: "MemberId",
+                        name: "FK_UserMessage_AspNetUsers_ReceiverId",
+                        column: x => x.ReceiverId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_UserMessage_Member_ToId",
-                        column: x => x.ToId,
-                        principalTable: "Member",
-                        principalColumn: "MemberId",
+                        name: "FK_UserMessage_AspNetUsers_SenderId",
+                        column: x => x.SenderId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "ApplicationUserGroup",
+                columns: table => new
+                {
+                    GroupsId = table.Column<string>(type: "TEXT", nullable: false),
+                    MembersId = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ApplicationUserGroup", x => new { x.GroupsId, x.MembersId });
+                    table.ForeignKey(
+                        name: "FK_ApplicationUserGroup_AspNetUsers_MembersId",
+                        column: x => x.MembersId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ApplicationUserGroup_Group_GroupsId",
+                        column: x => x.GroupsId,
+                        principalTable: "Group",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GroupMessage",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    SenderId = table.Column<string>(type: "TEXT", nullable: false),
+                    ReceiverId = table.Column<string>(type: "TEXT", nullable: false),
+                    Content = table.Column<string>(type: "TEXT", nullable: false),
+                    Time = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GroupMessage", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GroupMessage_AspNetUsers_SenderId",
+                        column: x => x.SenderId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_GroupMessage_Group_ReceiverId",
+                        column: x => x.ReceiverId,
+                        principalTable: "Group",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ApplicationUserGroup_MembersId",
+                table: "ApplicationUserGroup",
+                column: "MembersId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserClaims_UserId",
@@ -220,39 +213,32 @@ namespace Chat.Server.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_GroupMessage_FromId",
+                name: "IX_GroupMessage_ReceiverId",
                 table: "GroupMessage",
-                column: "FromId");
+                column: "ReceiverId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_GroupMessage_ToId",
+                name: "IX_GroupMessage_SenderId",
                 table: "GroupMessage",
-                column: "ToId");
+                column: "SenderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Membership_GroupId",
-                table: "Membership",
-                column: "GroupId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Membership_MemberId",
-                table: "Membership",
-                column: "MemberId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserMessage_FromId",
+                name: "IX_UserMessage_ReceiverId",
                 table: "UserMessage",
-                column: "FromId");
+                column: "ReceiverId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserMessage_ToId",
+                name: "IX_UserMessage_SenderId",
                 table: "UserMessage",
-                column: "ToId");
+                column: "SenderId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ApplicationUserGroup");
+
             migrationBuilder.DropTable(
                 name: "AspNetUserClaims");
 
@@ -266,19 +252,13 @@ namespace Chat.Server.Data.Migrations
                 name: "GroupMessage");
 
             migrationBuilder.DropTable(
-                name: "Membership");
-
-            migrationBuilder.DropTable(
                 name: "UserMessage");
-
-            migrationBuilder.DropTable(
-                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "Group");
 
             migrationBuilder.DropTable(
-                name: "Member");
+                name: "AspNetUsers");
         }
     }
 }

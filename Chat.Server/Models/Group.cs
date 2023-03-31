@@ -1,7 +1,10 @@
-namespace Chat.Server.Models;
+using Microsoft.AspNetCore.Identity;
 
+namespace Chat.Server.Models;
 
 public class Group
 {
-    public string GroupId { get; set; }
+    public string Id { get; set; }
+    public List<ApplicationUser> Members { get; } = new();
+    public List<GroupMessage> Messages { get; } = new();
 }
