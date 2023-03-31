@@ -59,6 +59,7 @@ public class ChatClient
             if (token == null)
             {
                 PrintError("login error:invalid credential");
+                return;
             }
 
             _token = token;
@@ -91,7 +92,7 @@ public class ChatClient
         
         if (response.IsSuccessStatusCode)
         {
-            Console.WriteLine("ok");
+            PrintSuccess("ok");
             return;
         }
 
@@ -129,11 +130,11 @@ public class ChatClient
         {
             if (response.Status == RpcResponseStatus.Error)
             {
-                PrintError("error:"+response.Message);
+                PrintError(response.Message);
             }
             else if(response.Status == RpcResponseStatus.Warning)
             {
-                PrintWarning("warning:" + response.Message);
+                PrintWarning(response.Message);
             }
             else
             {

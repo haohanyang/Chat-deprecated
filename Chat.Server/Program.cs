@@ -1,17 +1,14 @@
 using System.Text;
+using Chat.Server.Data;
 using Chat.Server.Models;
 using Chat.Server.Services;
-using Chat.Server.Data;
-
-using Microsoft.AspNetCore.SignalR;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,11 +53,12 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
-} );
+});
 
 // DI for services
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
 builder.Services.AddScoped<IDatabaseService, DatabaseService>();
+builder.Services.AddScoped<IUserGroupService, UserGroupService>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -69,18 +67,18 @@ builder.Services.AddAuthentication(options =>
 }).AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
-    options.TokenValidationParameters = new TokenValidationParameters()
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ClockSkew = TimeSpan.Zero,
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = "apiWithAuthBackend",
-        ValidAudience = "apiWithAuthBackend",
+        ValidIssuer = "chat",
+        ValidAudience = "chat",
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes("!SomethingSecret!")
-        ),
+            Encoding.UTF8.GetBytes("6E5A7234753778214125442A472D4B61")
+        )
     };
     options.Events = new JwtBearerEvents
     {
@@ -91,18 +89,21 @@ builder.Services.AddAuthentication(options =>
             var path = context.HttpContext.Request.Path;
             if (!string.IsNullOrEmpty(accessToken) &&
                 path.StartsWithSegments("/chat"))
-            {
                 // Read the token out of the query string
                 context.Token = accessToken;
-            }
             return Task.CompletedTask;
         }
     };
 });
-builder.Services.AddIdentityCore<IdentityUser>(options =>
-{
-    options.Password.RequiredLength = 6;
-}).AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredLength = 4;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = false;
+        options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddSingleton<IUserIdProvider, UsernameBasedUserIdProvider>();
 builder.Services.AddSignalR();

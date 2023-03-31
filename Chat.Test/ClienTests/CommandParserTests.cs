@@ -10,30 +10,29 @@ public class CommandParserTests
     public void LoginCommandTest()
     {
         const string commandStr1 = "login abc";
-        var command1 = CommandParser.parse(commandStr1) as LoginCommand;
+        var command1 = CommandParser.Parse(commandStr1) as LoginCommand;
         Assert.Multiple(() =>
         {
             Assert.NotNull(command1);
             Assert.IsNull(command1.Password);
             Assert.That(command1!.Username, Is.EqualTo("abc"));
         });
-        
+
         const string commandStr2 = "login username pass@word";
-        var command2 = CommandParser.parse(commandStr2) as LoginCommand;
+        var command2 = CommandParser.Parse(commandStr2) as LoginCommand;
         Assert.Multiple(() =>
         {
             Assert.NotNull(command2);
             Assert.That(command2!.Username, Is.EqualTo("username"));
             Assert.That(command2!.Password, Is.EqualTo("pass@word"));
         });
-
     }
-    
+
     [Test]
     public void SendCommandTest()
     {
         const string commandStr1 = " send   u/user1  'my-message' ";
-        var command1 = CommandParser.parse(commandStr1) as SendMessageCommand;
+        var command1 = CommandParser.Parse(commandStr1) as SendMessageCommand;
         Assert.Multiple(() =>
         {
             Assert.NotNull(command1);
@@ -43,7 +42,7 @@ public class CommandParserTests
         });
 
         const string commandStr2 = "send   g/group1 'this' ";
-        var command2 = CommandParser.parse(commandStr2) as SendMessageCommand;
+        var command2 = CommandParser.Parse(commandStr2) as SendMessageCommand;
         Assert.Multiple(() =>
         {
             Assert.NotNull(command2);
@@ -52,12 +51,12 @@ public class CommandParserTests
             Assert.That(command2.Message, Is.EqualTo("this"));
         });
     }
-    
+
     [Test]
     public void CreateGroupCommandTest()
     {
         const string commandStr = "create  g/this-is-my-group1 ";
-        var command = CommandParser.parse(commandStr) as CreateGroupCommand;
+        var command = CommandParser.Parse(commandStr) as CreateGroupCommand;
         Assert.NotNull(command);
         Assert.That(command!.GroupId, Is.EqualTo("this-is-my-group1"));
     }

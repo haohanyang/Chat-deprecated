@@ -1,74 +1,67 @@
-namespace Chat.Server.Services;
-
 using System.Globalization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 
-public interface IAuthenticationService
+namespace Chat.Server.Services;
+
+public interface IAuthenticationTokenService
 {
-    public string? CreateToken(IdentityUser user);
+    public string? GenerateToken(IdentityUser user);
+    public string? VerifyToken(string token);
 }
 
-public class AuthenticationService : IAuthenticationService
+public class AuthenticationTokenService : IAuthenticationTokenService
 {
     private const int ExpirationDay = 30;
-    private readonly ILogger<AuthenticationService> _logger;
+    private const string SECRETS = "6E5A7234753778214125442A472D4B61";
+    private readonly ILogger<AuthenticationTokenService> _logger;
 
-    public AuthenticationService(ILogger<AuthenticationService> logger)
+    public AuthenticationTokenService(ILogger<AuthenticationTokenService> logger)
     {
         _logger = logger;
     }
-    
-    private List<Claim> CreateClaims(IdentityUser user)
-    {
-        _ = user.UserName ?? throw new ArgumentException("Username is empty");
-        return new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
-            new Claim(ClaimTypes.NameIdentifier, user.UserName),
-        };
-    }
 
-    private SigningCredentials CreateCredentials()
+    public string? GenerateToken(IdentityUser user)
     {
-        var key = Encoding.ASCII.GetBytes("!SomethingSecret!");
-        return new SigningCredentials(
-            new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature
-        );
-    }
-    
-    public string? CreateToken(IdentityUser user)
-    {
-        var expiration = DateTime.UtcNow.AddDays(ExpirationDay);
         try
         {
-            // Claims
-            var claims = CreateClaims(user);
+            var expiration = DateTime.UtcNow.AddDays(ExpirationDay);
+            if (user.UserName == null) throw new ArgumentException("UserName is null");
 
-            // Signing credentials
-            var signingCredentials = CreateCredentials();
-            
+            var claims = new List<Claim>
+            {
+                new(JwtRegisteredClaimNames.Sub, user.UserName),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
+                new(ClaimTypes.NameIdentifier, user.UserName)
+            };
+
+            var signingCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SECRETS)),
+                SecurityAlgorithms.HmacSha256Signature
+            );
+
             // Generate the token
             var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtToken = new JwtSecurityToken("apiWithAuthBackend", "apiWithAuthBackend", claims, expires: expiration,
+            var jwtToken = new JwtSecurityToken("chat", "chat", claims, expires: expiration,
                 signingCredentials: signingCredentials);
 
-            return tokenHandler.WriteToken(jwtToken);
-        }
-        catch (ArgumentException e)
-        {
-            _logger.LogError("CreateToken error: Username of user(id:{id}) doesn't exist", user.Id);
-            return null;
+            var token = tokenHandler.WriteToken(jwtToken);
+            _logger.LogInformation("Generated token {}", token);
+            return token;
         }
         catch (Exception e)
         {
-            _logger.LogError("CreateToken error: {message}", e.Message);
+            _logger.LogError("CreateToken({}) error:{}", user.UserName, e.Message);
             return null;
         }
+    }
+
+    public string? VerifyToken(string token)
+    {
+        return null;
     }
 }
