@@ -9,21 +9,28 @@ public interface IDatabaseTask
 
 public class AddGroupTask : IDatabaseTask
 {
-    public int GroupId { get; init; }
+    public string GroupId { get; init; }
+    public CancellationToken CancellationToken { get; init; }
+}
+
+
+public class RemoveGroupTask : IDatabaseTask
+{
+    public string GroupId { get; init; }
     public CancellationToken CancellationToken { get; init; }
 }
 
 public class AddMemberTask : IDatabaseTask
 {
-    public int MemberId { get; init; }
-    public int GroupId { get; init; }
+    public string MemberId { get; init; }
+    public string GroupId { get; init; }
     public CancellationToken CancellationToken { get; init; }
 }
 
 public class RemoveMemberTask : IDatabaseTask
 {
-    public int MemberId { get; init; }
-    public int GroupId { get; init; }
+    public string MemberId { get; init; }
+    public string GroupId { get; init; }
     public CancellationToken CancellationToken { get; init; }
 }
 

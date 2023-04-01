@@ -58,7 +58,7 @@ public class ChatClient
             var token = await GetToken(username, password);
             if (token == null)
             {
-                PrintError("login error:invalid credential");
+                PrintError("invalid credential");
                 return;
             }
 
@@ -78,7 +78,7 @@ public class ChatClient
         }
         catch (Exception e)
         {
-            PrintError("login error:"+e.Message);
+            PrintError(e.Message);
         }
     }
     
@@ -97,7 +97,7 @@ public class ChatClient
         }
 
         var errorMessage = await response.Content.ReadAsStringAsync();
-        PrintError("error:" + errorMessage);
+        PrintError(errorMessage);
     }
 
     private async Task Exit()

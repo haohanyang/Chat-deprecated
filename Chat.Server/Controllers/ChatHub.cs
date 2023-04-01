@@ -21,20 +21,15 @@ public class ChatHub : Hub<IChatClient>
     private readonly IBackgroundTaskQueue _taskQueue;
     private readonly ILogger<ChatHub> _logger;
     private readonly ApplicationDbContext _applicationDbContext;
-    private readonly int _messageCount;
 
-    private readonly UserManager<ApplicationUser> _userManager;
-    //private readonly IDatabaseService _databaseService;
 
     // Debug only
-    public ChatHub(ApplicationDbContext applicationDbContext,UserManager<ApplicationUser> userManager,ILogger<ChatHub> logger,IBackgroundTaskQueue taskQueue,IUserGroupService userGroupService)
+    public ChatHub(ApplicationDbContext applicationDbContext,ILogger<ChatHub> logger,IBackgroundTaskQueue taskQueue,IUserGroupService userGroupService)
     {
         _logger = logger;
-        _userManager = userManager;
         _applicationDbContext = applicationDbContext;
         _taskQueue = taskQueue;
         _userGroupService = userGroupService;
-        _messageCount = 0;
     }
 
     public override async Task OnConnectedAsync()
@@ -94,6 +89,10 @@ public class ChatHub : Hub<IChatClient>
         var username = Context.UserIdentifier!;
         var response = _userGroupService.CreateGroup(groupId);
         await SendResponse(username, response);
+        await _taskQueue.QueueBackgroundWorkItemAsync(token => new AddGroupTask
+        {
+            GroupId = groupId
+        });
     }
 
     public async Task LeaveGroup(string groupId)
@@ -175,20 +174,6 @@ public class ChatHub : Hub<IChatClient>
         // Add to message queue
         _userGroupService.AddMessage(message);
         await Clients.Group(groupId).ReceiveMessage(message);
-    }
-
-    private async ValueTask AddMessage(CancellationToken c)
-    {
-        if (!c.IsCancellationRequested)
-        {
-            _applicationDbContext.Add(new UserMessage
-            {
-                Content = "bakaba",
-                SenderId = "user1",
-                ReceiverId = "user2",
-                Time = DateTime.Now,
-            });
-        }
     }
     
     public async Task SendUserMessage(string receiver, string content)
