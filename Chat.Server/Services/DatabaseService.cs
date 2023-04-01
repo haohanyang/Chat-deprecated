@@ -55,19 +55,12 @@ public class DatabaseService : IDatabaseService
                     _logger.LogError("AddGroupMessage {} error:u/{} not found in db", message.Content , message.Sender);
                     return;
                 }
-
-                var dbReceiver = await _applicationDbContext.Groups.FindAsync(message.Receiver);
-                if (dbReceiver == null)
-                {
-                    _logger.LogError("AddGroupMessage {} error:g/{} not found in db", message.Content , message.Receiver);
-                    return;
-                }
-
+                
                 await _applicationDbContext.GroupMessages.AddAsync(new GroupMessage
                 {
                     Content = message.Content,
                     SenderId = dbSender.Id,
-                    ReceiverId = dbReceiver.Id,
+                    ReceiverId = message.Receiver,
                     Time = new DateTime()
                 }, cancellationToken);
                 await _applicationDbContext.SaveChangesAsync(cancellationToken);
