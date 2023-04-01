@@ -1,11 +1,12 @@
 using Chat.Common;
 using Chat.Server.Data;
 using Chat.Server.Models;
+using Chat.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Chat.Server.Services;
+namespace Chat.Server.Controllers;
 
 public interface IChatClient
 {
@@ -179,8 +180,6 @@ public class ChatHub : Hub<IChatClient>
             return;
         }
         var message = new Message(username, groupId, DateTime.Now, MessageType.GroupMessage, content);
-        // Add to message queue
-        _userGroupService.AddMessage(message);
         await Clients.Group(groupId).ReceiveMessage(message);
         await _taskQueue.QueueBackgroundWorkItemAsync(e => new AddGroupMessageTask
         {
@@ -197,8 +196,6 @@ public class ChatHub : Hub<IChatClient>
         {
             
             var message = new Message(username, receiver, DateTime.Now, MessageType.UserMessage, content);
-            _userGroupService.AddMessage(message);
-            
             await Clients.User(receiver).ReceiveMessage(message);
             await _taskQueue.QueueBackgroundWorkItemAsync(token =>
                     new AddUserMessageTask { CancellationToken = token, Message = message}

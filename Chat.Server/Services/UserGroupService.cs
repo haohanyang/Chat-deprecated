@@ -11,7 +11,7 @@ public interface IUserGroupService
     public IEnumerable<string>? GetUserGroups(string username);
     public IEnumerable<string>? GetUserConnections(string username);
     public IEnumerable<string>? GetGroupMembers(string username);
-    public void AddMessage(Message message);
+
     public void AddConnection(string username, string connectionId);
     public void RemoveConnection(string username, string connectionId);
 }
@@ -24,13 +24,13 @@ public class UserGroupService : IUserGroupService
     // user to groups joined
     private static readonly Dictionary<string, HashSet<string>> _users = new();
     private static readonly Dictionary<string, HashSet<string>> _connections = new();
-    private static readonly ConcurrentQueue<Message> _messages = new();
-
+   
+    
     
     public Dictionary<string, HashSet<string>> Groups => _groups;
     public Dictionary<string, HashSet<string>> Users => _users;
     public Dictionary<string, HashSet<string>> Connections => _connections;
-    public ConcurrentQueue<Message> Messages => _messages;
+
 
     public RpcResponse CreateGroup(string groupId)
     {
@@ -176,10 +176,5 @@ public class UserGroupService : IUserGroupService
                         _connections.Remove(username);
                 }
         }
-    }
-
-    public void AddMessage(Message message)
-    {
-        _messages.Enqueue(message);
     }
 }
