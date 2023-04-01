@@ -30,6 +30,8 @@ public class DatabaseService : IDatabaseService
             await AddUserMessage(addUserMessageTask);
         if (task is AddGroupTask addGroupTask)
             await AddGroup(addGroupTask);
+        if (task is AddMemberTask addMemberTask)
+            await AddMember(addMemberTask);
     }
     
 
@@ -129,6 +131,32 @@ public class DatabaseService : IDatabaseService
         catch (Exception e)
         {
             _logger.LogError("AddGroup {} error:{}", groupId, e.Message);
+        }
+    }
+
+    private async Task AddMember(AddMemberTask task)
+    {
+        var cancellationToken  = task.CancellationToken;
+        try
+        {
+            var dbMember = await _userManager.FindByNameAsync(task.MemberId);
+            if (dbMember == null)
+            {
+                _logger.LogError("AddMember {} to {} error: user doesn't exist", task.MemberId, task.GroupId);
+                return;
+            }
+
+            await _applicationDbContext.Memberships.AddAsync(new Membership
+            {
+                GroupId = task.GroupId,
+                MemberId = dbMember.Id
+            }, cancellationToken);
+            await _applicationDbContext.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("AddMember ok");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("AddMember error:{}", e.Message);
         }
     }
 }

@@ -124,9 +124,7 @@ public class ChatHub : Hub<IChatClient>
     public async Task JoinGroup(string groupId)
     {
         var username = Context.UserIdentifier!;
-
         var response = _userGroupService.JoinGroup(username, groupId);
-        
         if (response.Status == RpcResponseStatus.Success)
         {
             // Add to ask queue
@@ -141,6 +139,11 @@ public class ChatHub : Hub<IChatClient>
                         Groups.AddToGroupAsync(connectionId, groupId)));
             }
             await SendResponse(username, new RpcResponse(RpcResponseStatus.Success, "You have joined g/" + groupId));
+            await _taskQueue.QueueBackgroundWorkItemAsync(token => new AddMemberTask
+            {
+                GroupId = groupId,
+                MemberId = username
+            });
         }
         else
         {
