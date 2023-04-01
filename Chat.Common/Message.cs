@@ -1,9 +1,9 @@
 ﻿namespace Chat.Common;
 
-public readonly record struct Message(string From, string To, DateTime Time, ReceiverType Type, string Content);
+public readonly record struct Message(string Sender, string Receiver, DateTime Time, MessageType Type, string Content);
 
-public enum ReceiverType
+public enum MessageType
 {
-    User,
-    Group
+    UserMessage,
+    GroupMessage
 }

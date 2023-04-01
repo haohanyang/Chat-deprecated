@@ -112,9 +112,9 @@ public class ChatClient
     {
         connection.On<Message>(ChatEvents.ReceiveMessage, message =>
         {
-            var stringMessage = message.Type == ReceiverType.User ? 
-                $"{message.Time} u/{message.From}:{message.Content}" : 
-                $"{message.Time} g/{message.To} u/{message.From}:{message.Content}";
+            var stringMessage = message.Type == MessageType.UserMessage ? 
+                $"{message.Time} u/{message.Sender}:{message.Content}" : 
+                $"{message.Time} g/{message.Receiver} u/{message.Sender}:{message.Content}";
             
             Console.Write(new Rune(0x1f4ac));
             Console.WriteLine(" " + stringMessage);
@@ -199,7 +199,7 @@ public class ChatClient
             
             if (command is SendMessageCommand sendMessageCommand)
             {
-                await SendMessage(sendMessageCommand.Receiver, sendMessageCommand.ReceiverType,
+                await SendMessage(sendMessageCommand.Receiver, sendMessageCommand.MessageType,
                     sendMessageCommand.Message);
             }
 
@@ -220,7 +220,7 @@ public class ChatClient
         }
     }
 
-    private async Task SendMessage(string receiver, ReceiverType type, string content)
+    private async Task SendMessage(string receiver, MessageType type, string content)
     {
         if (!IsConnected() || !IsAuthenticated())
         {
@@ -228,7 +228,7 @@ public class ChatClient
             return;
         }
         
-        if (type == ReceiverType.User)
+        if (type == MessageType.UserMessage)
         {
             await _connection!.InvokeAsync("SendUserMessage", receiver, content);
         }

@@ -1,5 +1,8 @@
 using Chat.Common;
+using Chat.Server.Data;
+using Chat.Server.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Chat.Server.Services;
@@ -15,12 +18,23 @@ public interface IChatClient
 public class ChatHub : Hub<IChatClient>
 {
     private readonly IUserGroupService _userGroupService;
+    private readonly IBackgroundTaskQueue _taskQueue;
+    private readonly ILogger<ChatHub> _logger;
+    private readonly ApplicationDbContext _applicationDbContext;
+    private readonly int _messageCount;
+
+    private readonly UserManager<ApplicationUser> _userManager;
     //private readonly IDatabaseService _databaseService;
 
     // Debug only
-    public ChatHub(IUserGroupService userGroupService)
+    public ChatHub(ApplicationDbContext applicationDbContext,UserManager<ApplicationUser> userManager,ILogger<ChatHub> logger,IBackgroundTaskQueue taskQueue,IUserGroupService userGroupService)
     {
+        _logger = logger;
+        _userManager = userManager;
+        _applicationDbContext = applicationDbContext;
+        _taskQueue = taskQueue;
         _userGroupService = userGroupService;
+        _messageCount = 0;
     }
 
     public override async Task OnConnectedAsync()
@@ -116,6 +130,7 @@ public class ChatHub : Hub<IChatClient>
         
         if (response.Status == RpcResponseStatus.Success)
         {
+            // Add to ask queue
             // No error or warning
             var notification = new Notification(DateTime.Now, "u/" + username + " joined the group");
             await Clients.Group(groupId).ReceiveNotification(notification);
@@ -137,6 +152,7 @@ public class ChatHub : Hub<IChatClient>
     public async Task SendGroupMessage(string groupId, string content)
     {
         var username = Context.UserIdentifier!;
+        var kk = Context.User.Identities;
 
         var groups = await GuardUser(username);
         if (groups == null)
@@ -155,27 +171,44 @@ public class ChatHub : Hub<IChatClient>
             await SendResponse(username, new RpcResponse(RpcResponseStatus.Error, "u/" + username + " is not in g/" + groupId));
             return;
         }
-        var message = new Message(username, groupId, DateTime.Now, ReceiverType.Group, content);
+        var message = new Message(username, groupId, DateTime.Now, MessageType.GroupMessage, content);
         // Add to message queue
         _userGroupService.AddMessage(message);
         await Clients.Group(groupId).ReceiveMessage(message);
+    }
+
+    private async ValueTask AddMessage(CancellationToken c)
+    {
+        if (!c.IsCancellationRequested)
+        {
+            _applicationDbContext.Add(new UserMessage
+            {
+                Content = "bakaba",
+                SenderId = "user1",
+                ReceiverId = "user2",
+                Time = DateTime.Now,
+            });
+        }
     }
     
     public async Task SendUserMessage(string receiver, string content)
     {
         var username = Context.UserIdentifier!;
-
+        
         if (await GuardUser(receiver) != null)
         {
-            var message = new Message(username, receiver, DateTime.Now, ReceiverType.User, content);
-            // Add to message queue
+            
+            var message = new Message(username, receiver, DateTime.Now, MessageType.UserMessage, content);
             _userGroupService.AddMessage(message);
+            
             await Clients.User(receiver).ReceiveMessage(message);
-            // TODO: notify
+            await _taskQueue.QueueBackgroundWorkItemAsync(token =>
+                    new AddUserMessageTask { CancellationToken = token, Message = message}
+            );
             await Clients.User(username).RpcResponse(new RpcResponse(RpcResponseStatus.Success, "ok"));
         }
     }
-
+    
     private async Task SendResponse(string username, RpcResponse response)
     {
         await Clients.User(username).RpcResponse(response);

@@ -1,4 +1,5 @@
 using System.Text;
+using Chat.Server.Configs;
 using Chat.Server.Data;
 using Chat.Server.Models;
 using Chat.Server.Services;
@@ -57,9 +58,18 @@ builder.Services.AddSwaggerGen(options =>
 
 // DI for services
 builder.Services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
-builder.Services.AddScoped<IDatabaseService, DatabaseService>();
 builder.Services.AddScoped<IUserGroupService, UserGroupService>();
+builder.Services.AddScoped<IDatabaseService, DatabaseService>();
+builder.Services.AddHostedService<QueuedHostedDatabaseService>();
+builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => 
+{
+    if (!int.TryParse(builder.Configuration["QueueCapacity"], out var queueCapacity))
+    {
+        queueCapacity = 100;
+    }
 
+    return new BackgroundTaskQueue(queueCapacity);
+});
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -105,7 +115,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddSingleton<IUserIdProvider, UsernameBasedUserIdProvider>();
+// builder.Services.AddSingleton<IUserIdProvider, UsernameBasedUserIdProvider>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();

@@ -20,7 +20,7 @@ public class LoginCommand : ICommand
 public class SendMessageCommand : ICommand
 {
     public string  Receiver { get; init; }
-    public ReceiverType ReceiverType { get; init; }
+    public MessageType MessageType { get; init; }
     public string Message { get; init; }
 }
 

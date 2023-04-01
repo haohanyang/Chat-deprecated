@@ -6,74 +6,107 @@ namespace Chat.Server.Services;
 
 public interface IDatabaseService
 {
-    //public void CreateGroup(string username, string groupId);
-    public void JoinGroup(string username, string groupId);
-    public Group? GetGroup(string groupId);
-    public ApplicationUser? GetUser(string username);
+    public Task ProcessTask(IDatabaseTask task);
 }
 
 public class DatabaseService : IDatabaseService
 {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly ApplicationDbContext _applicationDbContext;
     private readonly ILogger<DatabaseService> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
+    private int executionCount = 0;
 
-    public DatabaseService(ApplicationDbContext dbContext,
-        ILogger<DatabaseService> logger, UserManager<ApplicationUser> userManager)
+    public DatabaseService(ILogger<DatabaseService> logger, UserManager<ApplicationUser> userManager,
+        ApplicationDbContext applicationDbContext)
     {
-        _dbContext = dbContext;
         _logger = logger;
+        _applicationDbContext = applicationDbContext;
         _userManager = userManager;
     }
 
-    public void JoinGroup(string username, string groupId)
+    public async Task ProcessTask(IDatabaseTask task)
     {
+        if (task is AddUserMessageTask addUserMessageTask)
+            await AddUserMessage(addUserMessageTask);
+    }
+
+    private async Task AddGroupMessage(AddGroupMessageTask task)
+    {
+        var cancellationToken = task.CancellationToken;
+        var message = task.Message;
+
         try
         {
-            // Can probably skip this due to the foreign key constraint 
-            var group = _dbContext.Groups.Find(groupId);
-            if (group == null)
+            if (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogError("JoinGroup Error: g/{} doesn't exist", groupId);
-                throw new ArgumentException("g/" + groupId + " doesn't exist");
-            }
-            //
-            // _dbContext.Memberships.Add(new Membership
-            // {
-            //     MemberId = username,
-            //     GroupId = groupId
-            // });
+                var dbSender = await _userManager.FindByNameAsync(message.Sender);
+                if (dbSender == null)
+                {
+                    _logger.LogError("AddUserMessage {} error:u/{} not found in db", message.Content , message.Sender);
+                    return;
+                }
 
-            _dbContext.SaveChanges();
-            _logger.LogInformation("u/{} joins group /g{}", username, groupId);
+                var dbReceiver = await _applicationDbContext.Groups.FindAsync(message.Receiver);
+                if (dbReceiver == null)
+                {
+                    
+                    _logger.LogError("AddUserMessage {} error:g/{} not found in db", message.Content , message.Receiver);
+                    return;
+                }
+
+                await _applicationDbContext.GroupMessages.AddAsync(new GroupMessage
+                {
+                    Content = message.Content,
+                    SenderId = dbSender.Id,
+                    ReceiverId = dbReceiver.Id,
+                    Time = new DateTime()
+                }, cancellationToken);
+                await _applicationDbContext.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("AddUserMessage {}: ok", message.Content);
+            }
         }
         catch (Exception e)
         {
-            _logger.LogError("JoinGroup Error: {}", e.Message);
+            _logger.LogError("AddUserMessage {} error:{}", message.Content, e.Message);
         }
     }
 
-    public Group? GetGroup(string groupId)
+    private async Task AddUserMessage(AddUserMessageTask task)
     {
-        return _dbContext.Groups.Find(groupId);
-    }
-
-    public ApplicationUser? GetUser(string username)
-    {
-        return _userManager.FindByNameAsync(username).Result;
-    }
-
-    public void CreateGroup(string groupId)
-    {
+        var cancellationToken = task.CancellationToken;
+        var message = task.Message;
         try
         {
-            _dbContext.Groups.Add(new Group { Id = groupId });
-            _dbContext.SaveChanges();
-            _logger.LogInformation("g/{} is created", groupId);
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                var dbSender = await _userManager.FindByNameAsync(message.Sender);
+                if (dbSender == null)
+                {
+                    _logger.LogError("AddGroupMessage {} error: u/{} not found in db", message.Content , message.Sender);
+                    return;
+                }
+
+                var dbReceiver = await _userManager.FindByNameAsync(message.Receiver);
+                if (dbReceiver == null)
+                {
+                    _logger.LogError("AddGroupMessage {} error:u/{} not found in db",  message.Content ,message.Receiver);
+                    return;
+                }
+
+                await _applicationDbContext.UserMessages.AddAsync(new UserMessage
+                {
+                    Content = message.Content,
+                    SenderId = dbSender.Id,
+                    ReceiverId = dbReceiver.Id,
+                    Time = new DateTime()
+                }, cancellationToken);
+                await _applicationDbContext.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("AddGroupMessage {} ok", message.Content);
+            }
         }
         catch (Exception e)
         {
-            _logger.LogError("CreateGroup Error: {}", e.Message);
+            _logger.LogError("AddGroupMessage error:{}", e.Message);
         }
     }
 }

@@ -26,13 +26,7 @@ public class UserGroupService : IUserGroupService
     private static readonly Dictionary<string, HashSet<string>> _connections = new();
     private static readonly ConcurrentQueue<Message> _messages = new();
 
-    private readonly IDatabaseService _databaseService;
-
-    public UserGroupService(IDatabaseService databaseService)
-    {
-        _databaseService = databaseService;
-    }
-
+    
     public Dictionary<string, HashSet<string>> Groups => _groups;
     public Dictionary<string, HashSet<string>> Users => _users;
     public Dictionary<string, HashSet<string>> Connections => _connections;

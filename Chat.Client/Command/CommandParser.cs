@@ -66,11 +66,11 @@ public class CommandParser
             if (receiverType == "u")
             {
                 return new SendMessageCommand
-                    { ReceiverType = ReceiverType.User, Receiver = receiver, Message = message };
+                    { MessageType = MessageType.UserMessage, Receiver = receiver, Message = message };
             }
 
             return new SendMessageCommand
-                { ReceiverType = ReceiverType.Group, Receiver = receiver, Message = message };
+                { MessageType = MessageType.GroupMessage, Receiver = receiver, Message = message };
         }
 
         match = Regex.Match(input, JoinGroupPattern);
