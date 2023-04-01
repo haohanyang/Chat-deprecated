@@ -23,6 +23,7 @@ public class ApplicationDbContext : IdentityUserContext<ApplicationUser>
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ApplicationUser>().HasKey(e => e.UserName);
         modelBuilder.Entity<ApplicationUser>().HasMany(e => e.Groups)
             .WithMany(e => e.Members).UsingEntity<Membership>();
         modelBuilder.Entity<ApplicationUser>().HasMany(e => e.UserMessagesSent)
