@@ -154,7 +154,6 @@ public class ChatHub : Hub<IChatClient>
     public async Task SendGroupMessage(string groupId, string content)
     {
         var username = Context.UserIdentifier!;
-        var kk = Context.User.Identities;
 
         var groups = await GuardUser(username);
         if (groups == null)
@@ -177,6 +176,11 @@ public class ChatHub : Hub<IChatClient>
         // Add to message queue
         _userGroupService.AddMessage(message);
         await Clients.Group(groupId).ReceiveMessage(message);
+        await _taskQueue.QueueBackgroundWorkItemAsync(e => new AddGroupMessageTask
+        {
+            CancellationToken = e,
+            Message = message
+        });
     }
     
     public async Task SendUserMessage(string receiver, string content)

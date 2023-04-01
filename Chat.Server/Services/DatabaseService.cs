@@ -28,6 +28,8 @@ public class DatabaseService : IDatabaseService
     {
         if (task is AddUserMessageTask addUserMessageTask)
             await AddUserMessage(addUserMessageTask);
+        if (task is AddGroupMessageTask addGroupMessageTask)
+            await AddGroupMessage(addGroupMessageTask);
         if (task is AddGroupTask addGroupTask)
             await AddGroup(addGroupTask);
         if (task is AddMemberTask addMemberTask)
@@ -54,7 +56,6 @@ public class DatabaseService : IDatabaseService
                 var dbReceiver = await _applicationDbContext.Groups.FindAsync(message.Receiver);
                 if (dbReceiver == null)
                 {
-                    
                     _logger.LogError("AddGroupMessage {} error:g/{} not found in db", message.Content , message.Receiver);
                     return;
                 }
@@ -114,7 +115,8 @@ public class DatabaseService : IDatabaseService
             _logger.LogError("AddUserMessage error:{}", e.Message);
         }
     }
-
+    
+    
     private async Task AddGroup(AddGroupTask task)
     {
         var cancellationToken = task.CancellationToken;
@@ -145,7 +147,6 @@ public class DatabaseService : IDatabaseService
                 _logger.LogError("AddMember {} to {} error: user doesn't exist", task.MemberId, task.GroupId);
                 return;
             }
-
             await _applicationDbContext.Memberships.AddAsync(new Membership
             {
                 GroupId = task.GroupId,
