@@ -114,6 +114,12 @@ public class ChatHub : Hub<IChatClient>
 
             var notification = new Notification(DateTime.Now, "u/" + username + " left the group");
             await Clients.Group(groupId).ReceiveNotification(notification);
+            await _taskQueue.QueueBackgroundWorkItemAsync(e => new RemoveMemberTask
+            {
+                CancellationToken = e,
+                GroupId = groupId,
+                MemberId = username
+            });
         }
         else
         {

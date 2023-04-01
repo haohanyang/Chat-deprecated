@@ -34,6 +34,9 @@ public class DatabaseService : IDatabaseService
             await AddGroup(addGroupTask);
         if (task is AddMemberTask addMemberTask)
             await AddMember(addMemberTask);
+        if (task is RemoveMemberTask removeMemberTask)
+            await RemoveMember(removeMemberTask);
+        
     }
     
 
@@ -158,6 +161,36 @@ public class DatabaseService : IDatabaseService
         catch (Exception e)
         {
             _logger.LogError("AddMember error:{}", e.Message);
+        }
+    }
+    
+    private async Task RemoveMember(RemoveMemberTask task)
+    {
+        var cancellationToken  = task.CancellationToken;
+        try
+        {
+            var dbMember = await _userManager.FindByNameAsync(task.MemberId);
+            if (dbMember == null)
+            {
+                _logger.LogError("RemoveMember {} from {} error: user doesn't exist", task.MemberId, task.GroupId);
+                return;
+            }
+
+            var membership = await _applicationDbContext.Memberships.FindAsync(task.GroupId, dbMember.Id);
+
+            if (membership == null)
+            {
+                _logger.LogError("RemoveMember {} from {} error: group doesn't exist", task.MemberId, task.GroupId);
+                return;
+            }
+
+            _applicationDbContext.Memberships.Remove(membership);
+            await _applicationDbContext.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("RemoveMember ok");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("RemoveMember error:{}", e.Message);
         }
     }
 }
