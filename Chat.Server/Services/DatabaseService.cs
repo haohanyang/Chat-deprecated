@@ -69,7 +69,8 @@ public class DatabaseService : IDatabaseService
         {
             if (!cancellationToken.IsCancellationRequested)
             {
-                var dbSender = await _applicationDbContext.Users.FirstOrDefaultAsync(e => e.UserName == message.Sender, cancellationToken); 
+                var dbSender = await _applicationDbContext.Users.
+                    FirstOrDefaultAsync(e => e.UserName == message.Sender, cancellationToken); 
                 // _userManager.FindByNameAsync(message.Sender);
                 if (dbSender == null)
                 {
@@ -77,13 +78,20 @@ public class DatabaseService : IDatabaseService
                     return;
                 }
 
-                await _applicationDbContext.GroupMessages.AddAsync(new GroupMessage
+                var dbReceiver = await _applicationDbContext.Groups.FindAsync(message.Receiver, cancellationToken);
+                if (dbReceiver == null)
+                {
+                    _logger.LogError("AddGroupMessage error:{}", "group doesn't exist");
+                    return;
+                }
+                
+                dbReceiver.Messages.Add(new GroupMessage
                 {
                     Content = message.Content,
                     SenderId = dbSender.Id,
-                    ReceiverId = message.Receiver,
+                    ReceiverId = dbReceiver.Id,
                     Time = new DateTime()
-                }, cancellationToken);
+                });
                 await _applicationDbContext.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("AddGroupMessage {}: ok", message.Content);
             }
@@ -120,14 +128,15 @@ public class DatabaseService : IDatabaseService
                     _logger.LogError("AddUserMessage {} error:u/{} not found in db", message.Content, message.Receiver);
                     return;
                 }
-
-                await _applicationDbContext.UserMessages.AddAsync(new UserMessage
+                
+                dbSender.UserMessagesSent.Add(new UserMessage
                 {
                     Content = message.Content,
                     SenderId = dbSender.Id,
                     ReceiverId = dbReceiver.Id,
                     Time = new DateTime()
-                }, cancellationToken);
+                });
+                
                 await _applicationDbContext.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("AddUserMessage {} ok", message.Content);
             }

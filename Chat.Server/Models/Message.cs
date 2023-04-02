@@ -9,10 +9,10 @@ public class UserMessage
     public string Id { get; set; }
 
     public string SenderId { get; set; }
-    public ApplicationUser Sender { get; set; }
+    [ForeignKey("SenderId")] public ApplicationUser Sender { get; set; }
 
     public string ReceiverId { get; set; }
-    public ApplicationUser Receiver { get; set; }
+    [ForeignKey("ReceiverId")] public ApplicationUser Receiver { get; set; }
 
     public string Content { get; set; }
     public DateTime Time { get; set; }
@@ -24,10 +24,10 @@ public class GroupMessage
     public string Id { get; set; }
 
     public string SenderId { get; set; }
-    public ApplicationUser Sender { get; set; }
+    [ForeignKey("SenderId")] public ApplicationUser Sender { get; set; }
 
     public string ReceiverId { get; set; }
-    public Group Receiver { get; set; }
+    [ForeignKey("ReceiverId")] public Group Receiver { get; set; }
 
     public string Content { get; set; }
     public DateTime Time { get; set; }

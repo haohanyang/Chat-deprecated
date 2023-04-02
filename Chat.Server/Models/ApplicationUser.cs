@@ -8,5 +8,4 @@ public class ApplicationUser : IdentityUser
     public List<UserMessage> UserMessagesSent { get; } = new();
     public List<UserMessage> UserMessagesReceived { get; } = new();
     public List<GroupMessage> GroupMessagesSent { get; } = new();
-
 }
