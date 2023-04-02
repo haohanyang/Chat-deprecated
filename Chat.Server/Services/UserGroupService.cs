@@ -1,5 +1,8 @@
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using Chat.Common;
+using Microsoft.AspNetCore.Connections;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Chat.Server.Services;
 
@@ -8,9 +11,9 @@ public interface IUserGroupService
     public RpcResponse CreateGroup(string groupId);
     public RpcResponse LeaveGroup(string username, string groupId);
     public RpcResponse JoinGroup(string username, string groupId);
-    public IEnumerable<string>? GetUserGroups(string username);
-    public IEnumerable<string>? GetUserConnections(string username);
-    public IEnumerable<string>? GetGroupMembers(string username);
+    public ISet<string> GetUserGroups(string username);
+    public IEnumerable<string> GetUserConnections(string username);
+    public ISet<string> GetGroupMembers(string username);
 
     public void AddConnection(string username, string connectionId);
     public void RemoveConnection(string username, string connectionId);
@@ -18,15 +21,23 @@ public interface IUserGroupService
 
 public class UserGroupService : IUserGroupService
 {
+    private readonly IDatabaseService _databaseService;
+
+    private readonly ILogger<UserGroupService> _logger;
     // group to members
     private static readonly Dictionary<string, HashSet<string>> _groups = new();
 
     // user to groups joined
     private static readonly Dictionary<string, HashSet<string>> _users = new();
     private static readonly Dictionary<string, HashSet<string>> _connections = new();
-   
-    
-    
+
+
+    public UserGroupService(IDatabaseService databaseService, ILogger<UserGroupService> logger)
+    {
+        _databaseService = databaseService;
+        _logger = logger;
+    }
+
     public Dictionary<string, HashSet<string>> Groups => _groups;
     public Dictionary<string, HashSet<string>> Users => _users;
     public Dictionary<string, HashSet<string>> Connections => _connections;
@@ -125,32 +136,51 @@ public class UserGroupService : IUserGroupService
         }
     }
 
-    public IEnumerable<string>? GetUserConnections(string username)
+    public IEnumerable<string> GetUserConnections(string username)
     {
-        if (_connections.TryGetValue(username, out var connections))
-            return connections;
-        return null;
+        lock (_connections)
+        {
+            if (_connections.TryGetValue(username, out var connections))
+                return connections;
+        }
+
+        return Enumerable.Empty<string>();
     }
 
-    public IEnumerable<string>? GetUserGroups(string username)
+    public ISet<string> GetUserGroups(string username)
     {
-        if (_users.TryGetValue(username, out var groups))
-            return groups;
-        return null;
+        lock (_users)
+        {
+            if (_users.TryGetValue(username, out var groups))
+            {
+                return groups;
+            }
+            // fetch user's joined groups from database
+            var dbGroups = _databaseService.GetUserGroups(username);
+            _users.Add(username, dbGroups);
+            return dbGroups;
+        }
     }
 
-    public IEnumerable<string>? GetGroupMembers(string groupId)
+    public ISet<string> GetGroupMembers(string groupId)
     {
-        if (_groups.TryGetValue(groupId, out var members))
-            return members;
-        return null;
+        lock (_groups)
+        {
+            if (_groups.TryGetValue(groupId, out var members))
+            {
+                return members;
+            }
+            // fetch group members from database 
+            var dbMembers = _databaseService.GetGroupMembers(groupId);
+            _groups.Add(groupId, dbMembers);
+            return dbMembers;
+        }
     }
 
     public void AddConnection(string username, string connectionId)
     {
         // Add connection and user
         lock (_connections)
-        lock (_users)
         {
             if (!_connections.TryGetValue(username, out var connections))
                 _connections.Add(username, new HashSet<string>());
@@ -159,8 +189,6 @@ public class UserGroupService : IUserGroupService
             {
                 _connections[username].Add(connectionId);
             }
-
-            if (!_users.TryGetValue(username, out _)) _users.Add(username, new HashSet<string>());
         }
     }
 

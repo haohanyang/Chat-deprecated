@@ -1,5 +1,6 @@
 using System.Text;
 using Chat.Server.Configs;
+using Chat.Server.Controllers;
 using Chat.Server.Data;
 using Chat.Server.Models;
 using Chat.Server.Services;

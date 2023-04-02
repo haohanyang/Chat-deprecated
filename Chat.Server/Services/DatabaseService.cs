@@ -7,6 +7,8 @@ namespace Chat.Server.Services;
 public interface IDatabaseService
 {
     public Task ProcessTask(IDatabaseTask task);
+    public HashSet<string> GetUserGroups(string username);
+    public HashSet<string> GetGroupMembers(string group);
 }
 
 public class DatabaseService : IDatabaseService
@@ -186,4 +188,24 @@ public class DatabaseService : IDatabaseService
             _logger.LogError("RemoveMember error:{}", e.Message);
         }
     }
+
+    public HashSet<string> GetUserGroups(string username)
+    {
+        var user = _applicationDbContext.Users.FirstOrDefault(e => e.UserName == username);
+        if (user != null)
+        {
+            return _applicationDbContext.Memberships.Where(e => e.MemberId == user.Id)
+                .Select(e => e.GroupId)
+                .ToHashSet();
+        }
+
+        return new();
+    }
+
+    public HashSet<string> GetGroupMembers(string group)
+    {
+        return _applicationDbContext.Memberships.Where(e => e.GroupId == group)
+            .Select(e => e.MemberId).ToHashSet();
+    }
+    
 }

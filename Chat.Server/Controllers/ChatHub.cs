@@ -5,6 +5,7 @@ using Chat.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Chat.Server.Controllers;
 
@@ -21,14 +22,11 @@ public class ChatHub : Hub<IChatClient>
     private readonly IUserGroupService _userGroupService;
     private readonly IBackgroundTaskQueue _taskQueue;
     private readonly ILogger<ChatHub> _logger;
-    private readonly ApplicationDbContext _applicationDbContext;
-
 
     // Debug only
-    public ChatHub(ApplicationDbContext applicationDbContext,ILogger<ChatHub> logger,IBackgroundTaskQueue taskQueue,IUserGroupService userGroupService)
+    public ChatHub(ILogger<ChatHub> logger,IBackgroundTaskQueue taskQueue,IUserGroupService userGroupService)
     {
         _logger = logger;
-        _applicationDbContext = applicationDbContext;
         _taskQueue = taskQueue;
         _userGroupService = userGroupService;
     }
@@ -41,9 +39,8 @@ public class ChatHub : Hub<IChatClient>
         _userGroupService.AddConnection(username, connectionId);
         var userGroups = _userGroupService.GetUserGroups(username);
         // Add user to joined group communications
-        if (userGroups != null)
-            await Task.WhenAll(userGroups.Select(groupId =>
-                Groups.AddToGroupAsync(connectionId, groupId)));
+        await Task.WhenAll(userGroups.Select(groupId =>
+            Groups.AddToGroupAsync(connectionId, groupId)));
         await base.OnConnectedAsync();
     }
 
@@ -56,32 +53,29 @@ public class ChatHub : Hub<IChatClient>
         await base.OnDisconnectedAsync(exception);
     }
     
-    private async Task<IEnumerable<string>?> GuardUser(string username)
+    private async Task<ISet<string>> GuardUser(string username)
     {
         var currentUser = Context.UserIdentifier!;
         var groups = _userGroupService.GetUserGroups(username);
-        if (groups == null)
+        if (groups.IsNullOrEmpty())
         {
             await SendResponse(currentUser,
                 new RpcResponse(RpcResponseStatus.Error, "u/" + username + " doesn't exist"));
-            return null;
         }
 
         return groups;
     }
     
-    private async Task<IEnumerable<string>?> GuardGroup(string groupId)
+    private async Task<ISet<string>> GuardGroup(string groupId)
     {
         var currentUser = Context.UserIdentifier!;
         var members = _userGroupService.GetGroupMembers(groupId);
 
-        if (members == null)
+        if (members.IsNullOrEmpty())
         {
             await SendResponse(currentUser,
                 new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " doesn't exist"));
-            return null;
         }
-
         return members;
     }
 
@@ -163,18 +157,18 @@ public class ChatHub : Hub<IChatClient>
         var username = Context.UserIdentifier!;
 
         var groups = await GuardUser(username);
-        if (groups == null)
+        if (groups.IsNullOrEmpty())
         {
             return;
         }
 
         var members = await GuardGroup(groupId);
-        if (members == null)
+        if (members.IsNullOrEmpty())
         {
             return;
         }
 
-        if (!members.Contains(username) || !groups.Contains(groupId))
+        if (/*!members.Contains(username) || */ !groups.Contains(groupId))
         {
             await SendResponse(username, new RpcResponse(RpcResponseStatus.Error, "u/" + username + " is not in g/" + groupId));
             return;
@@ -191,8 +185,7 @@ public class ChatHub : Hub<IChatClient>
     public async Task SendUserMessage(string receiver, string content)
     {
         var username = Context.UserIdentifier!;
-        
-        if (await GuardUser(receiver) != null)
+        if ((await GuardUser(receiver)).IsNullOrEmpty())
         {
             
             var message = new Message(username, receiver, DateTime.Now, MessageType.UserMessage, content);
@@ -201,6 +194,10 @@ public class ChatHub : Hub<IChatClient>
                     new AddUserMessageTask { CancellationToken = token, Message = message}
             );
             await Clients.User(username).RpcResponse(new RpcResponse(RpcResponseStatus.Success, "ok"));
+        }
+        else
+        {
+            await Clients.User(username).RpcResponse(new RpcResponse(RpcResponseStatus.Error, "u/" + username + " doesn't exist"));
         }
     }
     
