@@ -169,7 +169,7 @@ public class DatabaseService : IDatabaseService
         try
         {
             var dbMember =
-                await _applicationDbContext.Users.
+                await _applicationDbContext.Users.Include(e => e.Groups).
                     FirstOrDefaultAsync(e => e.UserName == task.MemberId,
                     cancellationToken);
             if (dbMember == null)
@@ -178,15 +178,14 @@ public class DatabaseService : IDatabaseService
                 return;
             }
 
-            var membership = await _applicationDbContext.Memberships.FindAsync(task.GroupId, dbMember.Id);
-
-            if (membership == null)
+            var group = dbMember.Groups.Find(e => e.Id == task.GroupId);
+            if (group == null)
             {
                 _logger.LogError("RemoveMember {} from {} error: group doesn't exist", task.MemberId, task.GroupId);
                 return;
             }
+            dbMember.Groups.Remove(group);
 
-            _applicationDbContext.Memberships.Remove(membership);
             await _applicationDbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("RemoveMember ok");
         }
