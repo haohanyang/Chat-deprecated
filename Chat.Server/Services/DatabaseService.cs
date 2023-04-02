@@ -15,15 +15,13 @@ public class DatabaseService : IDatabaseService
 {
     private readonly ApplicationDbContext _applicationDbContext;
     private readonly ILogger<DatabaseService> _logger;
-    private readonly UserManager<ApplicationUser> _userManager;
-    
 
-    public DatabaseService(ILogger<DatabaseService> logger, UserManager<ApplicationUser> userManager,
+
+    public DatabaseService(ILogger<DatabaseService> logger,
         ApplicationDbContext applicationDbContext)
     {
         _logger = logger;
         _applicationDbContext = applicationDbContext;
-        _userManager = userManager;
     }
 
     public async Task ProcessTask(IDatabaseTask task)
@@ -38,9 +36,9 @@ public class DatabaseService : IDatabaseService
             await AddMember(addMemberTask);
         if (task is RemoveMemberTask removeMemberTask)
             await RemoveMember(removeMemberTask);
-        
+
     }
-    
+
 
     private async Task AddGroupMessage(AddGroupMessageTask task)
     {
@@ -51,13 +49,14 @@ public class DatabaseService : IDatabaseService
         {
             if (!cancellationToken.IsCancellationRequested)
             {
-                var dbSender = await _userManager.FindByNameAsync(message.Sender);
+                var dbSender = await _applicationDbContext.Users.FirstOrDefaultAsync(e => e.UserName == message.Sender, cancellationToken);
+                // _userManager.FindByNameAsync(message.Sender);
                 if (dbSender == null)
                 {
-                    _logger.LogError("AddGroupMessage {} error:u/{} not found in db", message.Content , message.Sender);
+                    _logger.LogError("AddGroupMessage {} error:u/{} not found in db", message.Content, message.Sender);
                     return;
                 }
-                
+
                 await _applicationDbContext.GroupMessages.AddAsync(new GroupMessage
                 {
                     Content = message.Content,
@@ -83,17 +82,22 @@ public class DatabaseService : IDatabaseService
         {
             if (!cancellationToken.IsCancellationRequested)
             {
-                var dbSender = await _userManager.FindByNameAsync(message.Sender);
+                var dbSender = await _applicationDbContext.Users.
+                    FirstOrDefaultAsync(e => e.UserName == message.Sender, cancellationToken);
+                //_userManager.FindByNameAsync(message.Sender);
                 if (dbSender == null)
                 {
-                    _logger.LogError("AddUserMessage {} error: u/{} not found in db", message.Content , message.Sender);
+                    _logger.LogError("AddUserMessage {} error: u/{} not found in db", message.Content, message.Sender);
                     return;
                 }
 
-                var dbReceiver = await _userManager.FindByNameAsync(message.Receiver);
+                var dbReceiver =
+                    await _applicationDbContext.Users.
+                        FirstOrDefaultAsync(e => e.UserName == message.Receiver,
+                        cancellationToken);
                 if (dbReceiver == null)
                 {
-                    _logger.LogError("AddUserMessage {} error:u/{} not found in db",  message.Content ,message.Receiver);
+                    _logger.LogError("AddUserMessage {} error:u/{} not found in db", message.Content, message.Receiver);
                     return;
                 }
 
@@ -113,8 +117,8 @@ public class DatabaseService : IDatabaseService
             _logger.LogError("AddUserMessage error:{}", e.Message);
         }
     }
-    
-    
+
+
     private async Task AddGroup(AddGroupTask task)
     {
         var cancellationToken = task.CancellationToken;
@@ -136,7 +140,7 @@ public class DatabaseService : IDatabaseService
 
     private async Task AddMember(AddMemberTask task)
     {
-        var cancellationToken  = task.CancellationToken;
+        var cancellationToken = task.CancellationToken;
         try
         {
             var dbMember = await _userManager.FindByNameAsync(task.MemberId);
@@ -158,13 +162,16 @@ public class DatabaseService : IDatabaseService
             _logger.LogError("AddMember error:{}", e.Message);
         }
     }
-    
+
     private async Task RemoveMember(RemoveMemberTask task)
     {
-        var cancellationToken  = task.CancellationToken;
+        var cancellationToken = task.CancellationToken;
         try
         {
-            var dbMember = await _userManager.FindByNameAsync(task.MemberId);
+            var dbMember =
+                await _applicationDbContext.Users.
+                    FirstOrDefaultAsync(e => e.UserName == task.MemberId,
+                    cancellationToken);
             if (dbMember == null)
             {
                 _logger.LogError("RemoveMember {} from {} error: user doesn't exist", task.MemberId, task.GroupId);
@@ -207,5 +214,5 @@ public class DatabaseService : IDatabaseService
         return _applicationDbContext.Memberships.Where(e => e.GroupId == group)
             .Select(e => e.MemberId).ToHashSet();
     }
-    
+
 }
