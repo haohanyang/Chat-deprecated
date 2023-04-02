@@ -195,11 +195,6 @@ public class ChatHub : Hub<IChatClient>
             );
             await Clients.User(username).RpcResponse(new RpcResponse(RpcResponseStatus.Success, "ok"));
         }
-        else
-        {
-            await Clients.User(username)
-                .RpcResponse(new RpcResponse(RpcResponseStatus.Error, "u/" + username + " doesn't exist"));
-        }
     }
 
     private async Task SendResponse(string username, RpcResponse response)
