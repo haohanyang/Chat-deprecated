@@ -38,3 +38,5 @@ msbuild.wrn
 
 # sqlite
 :memory
+:memory-shm
+:memory-wal

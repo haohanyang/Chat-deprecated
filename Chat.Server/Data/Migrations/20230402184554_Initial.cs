@@ -163,7 +163,7 @@ namespace Chat.Server.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Membership",
+                name: "Memberships",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
@@ -172,15 +172,15 @@ namespace Chat.Server.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Membership", x => x.Id);
+                    table.PrimaryKey("PK_Memberships", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Membership_AspNetUsers_MemberId",
+                        name: "FK_Memberships_AspNetUsers_MemberId",
                         column: x => x.MemberId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Membership_Groups_GroupId",
+                        name: "FK_Memberships_Groups_GroupId",
                         column: x => x.GroupId,
                         principalTable: "Groups",
                         principalColumn: "Id",
@@ -219,13 +219,13 @@ namespace Chat.Server.Data.Migrations
                 column: "SenderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Membership_GroupId",
-                table: "Membership",
+                name: "IX_Memberships_GroupId",
+                table: "Memberships",
                 column: "GroupId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Membership_MemberId",
-                table: "Membership",
+                name: "IX_Memberships_MemberId",
+                table: "Memberships",
                 column: "MemberId");
 
             migrationBuilder.CreateIndex(
@@ -255,7 +255,7 @@ namespace Chat.Server.Data.Migrations
                 name: "GroupMessages");
 
             migrationBuilder.DropTable(
-                name: "Membership");
+                name: "Memberships");
 
             migrationBuilder.DropTable(
                 name: "UserMessages");

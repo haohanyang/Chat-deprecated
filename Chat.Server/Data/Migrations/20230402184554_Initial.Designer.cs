@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Chat.Server.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230402110732_Initial")]
+    [Migration("20230402184554_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -144,7 +144,7 @@ namespace Chat.Server.Data.Migrations
 
                     b.HasIndex("MemberId");
 
-                    b.ToTable("Membership");
+                    b.ToTable("Memberships");
                 });
 
             modelBuilder.Entity("Chat.Server.Models.UserMessage", b =>

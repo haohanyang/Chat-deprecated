@@ -4,8 +4,13 @@ namespace Chat.Server.Models;
 
 public class Membership
 {
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public string Id { get; set; }
     public string MemberId { get; set; }
-    public ApplicationUser Member { get; set; }
+
+    [ForeignKey("MemberId")] public ApplicationUser Member { get; set; }
+
     public string GroupId { get; set; }
-    public Group Group { get; set; }
+
+    [ForeignKey("GroupId")] public Group Group { get; set; }
 }

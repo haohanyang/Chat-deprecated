@@ -1,14 +1,15 @@
 using Chat.Server.Data;
 using Chat.Server.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Chat.Server.Services;
 
 public interface IDatabaseService
 {
     public Task ProcessTask(IDatabaseTask task);
-    public HashSet<string> GetUserGroups(string username);
-    public HashSet<string> GetGroupMembers(string group);
+    public (bool, ISet<string>) GetUserGroups(string username);
+    public (bool, ISet<string>) GetGroupMembers(string group);
 }
 
 public class DatabaseService : IDatabaseService
@@ -36,7 +37,26 @@ public class DatabaseService : IDatabaseService
             await AddMember(addMemberTask);
         if (task is RemoveMemberTask removeMemberTask)
             await RemoveMember(removeMemberTask);
+    }
 
+    public (bool, ISet<string>) GetUserGroups(string username)
+    {
+        var user = _applicationDbContext.Users.Include(e => e.Groups).FirstOrDefault(e => e.UserName == username);
+        if (user != null)
+        {
+            var groups = user.Groups.Select(e => e.Id).ToHashSet();
+            return (true, groups);
+        }
+
+        return (false, new HashSet<string>());
+    }
+
+    public (bool, ISet<string>) GetGroupMembers(string groupId)
+    {
+        var group = _applicationDbContext.Groups.Include(e => e.Members).FirstOrDefault(e => e.Id == groupId);
+        if (group != null) 
+            return (true, group.Members.Select(e => e.UserName!).ToHashSet());
+        return (false, new HashSet<string>());
     }
 
 
@@ -49,7 +69,7 @@ public class DatabaseService : IDatabaseService
         {
             if (!cancellationToken.IsCancellationRequested)
             {
-                var dbSender = await _applicationDbContext.Users.FirstOrDefaultAsync(e => e.UserName == message.Sender, cancellationToken);
+                var dbSender = await _applicationDbContext.Users.FirstOrDefaultAsync(e => e.UserName == message.Sender, cancellationToken); 
                 // _userManager.FindByNameAsync(message.Sender);
                 if (dbSender == null)
                 {
@@ -127,7 +147,7 @@ public class DatabaseService : IDatabaseService
         {
             await _applicationDbContext.Groups.AddAsync(new Group
             {
-                Id = groupId,
+                Id = groupId
             }, cancellationToken);
             await _applicationDbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("AddGroup {} ok", groupId);
@@ -143,19 +163,27 @@ public class DatabaseService : IDatabaseService
         var cancellationToken = task.CancellationToken;
         try
         {
-            var dbMember = await _userManager.FindByNameAsync(task.MemberId);
+            var dbMember = await _applicationDbContext.Users.
+                FirstOrDefaultAsync(e => e.UserName == task.MemberId, cancellationToken);
             if (dbMember == null)
             {
                 _logger.LogError("AddMember {} to {} error: user doesn't exist", task.MemberId, task.GroupId);
                 return;
             }
-            await _applicationDbContext.Memberships.AddAsync(new Membership
+
+            var group = await _applicationDbContext.Groups.FindAsync(task.GroupId);
+            if (group != null)
             {
-                GroupId = task.GroupId,
-                MemberId = dbMember.Id
-            }, cancellationToken);
-            await _applicationDbContext.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("AddMember ok");
+                dbMember.Groups.Add(group);
+                await _applicationDbContext.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation(
+                    "AddMember ok");
+            }
+            else
+            {
+                _logger.LogError("AddMember error:{}", "g/" + task.GroupId + " doesn't exist");
+            }
+            
         }
         catch (Exception e)
         {
@@ -169,7 +197,7 @@ public class DatabaseService : IDatabaseService
         try
         {
             var dbMember =
-                await _applicationDbContext.Users.Include(e => e.Groups).
+                await _applicationDbContext.Users.Include(e => e.Groups). 
                     FirstOrDefaultAsync(e => e.UserName == task.MemberId,
                     cancellationToken);
             if (dbMember == null)
@@ -185,7 +213,7 @@ public class DatabaseService : IDatabaseService
                 return;
             }
             dbMember.Groups.Remove(group);
-
+            
             await _applicationDbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("RemoveMember ok");
         }
@@ -194,24 +222,4 @@ public class DatabaseService : IDatabaseService
             _logger.LogError("RemoveMember error:{}", e.Message);
         }
     }
-
-    public HashSet<string> GetUserGroups(string username)
-    {
-        var user = _applicationDbContext.Users.FirstOrDefault(e => e.UserName == username);
-        if (user != null)
-        {
-            return _applicationDbContext.Memberships.Where(e => e.MemberId == user.Id)
-                .Select(e => e.GroupId)
-                .ToHashSet();
-        }
-
-        return new();
-    }
-
-    public HashSet<string> GetGroupMembers(string group)
-    {
-        return _applicationDbContext.Memberships.Where(e => e.GroupId == group)
-            .Select(e => e.MemberId).ToHashSet();
-    }
-
 }

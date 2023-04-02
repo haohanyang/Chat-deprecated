@@ -10,11 +10,11 @@ namespace Chat.Client;
 public class ChatClient
 {
     private readonly string _baseUrl;
-    private string? _username;
-    private string? _token;
     private HubConnection? _connection;
- 
-    
+    private string? _token;
+    private string? _username;
+
+
     public ChatClient(string baseUrl)
     {
         _baseUrl = baseUrl;
@@ -24,12 +24,12 @@ public class ChatClient
     {
         Console.WriteLine($"{Colors.RED}{message}{Colors.NORMAL}");
     }
-    
+
     private static void PrintWarning(string message)
     {
         Console.WriteLine($"{Colors.YELLOW}{message}{Colors.NORMAL}");
     }
-    
+
     private static void PrintSuccess(string message)
     {
         Console.WriteLine($"{Colors.GREEN}{message}{Colors.NORMAL}");
@@ -41,7 +41,7 @@ public class ChatClient
         var request = new AuthenticationRequest { Username = username, Password = password };
         var response = await httpClient.PostAsJsonAsync(_baseUrl + "/login",
             request);
-        
+
         if (response.IsSuccessStatusCode)
         {
             var authResponse = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
@@ -64,12 +64,12 @@ public class ChatClient
 
             _token = token;
             _username = username;
-            
+
             _connection = new HubConnectionBuilder().WithUrl(_baseUrl + "/chat", options =>
                 options.AccessTokenProvider = () =>
                     Task.FromResult(GetToken(username, password).Result)
             ).Build();
-            
+
             // Subscribe
             Subscribe(_connection);
             // Connect to the hub
@@ -81,41 +81,45 @@ public class ChatClient
             PrintError(e.Message);
         }
     }
-    
-    
+
+
     private async Task Register(string username, string password)
     {
-        using var httpClient = new HttpClient();
-        var request = new AuthenticationRequest { Username = username, Password = password };
-        var response = await httpClient.PostAsJsonAsync( _baseUrl + "/register",
-            request);
-        
-        if (response.IsSuccessStatusCode)
+        try
         {
-            PrintSuccess("ok");
-            return;
-        }
+            using var httpClient = new HttpClient();
+            var request = new AuthenticationRequest { Username = username, Password = password };
+            var response = await httpClient.PostAsJsonAsync(_baseUrl + "/register",
+                request);
 
-        var errorMessage = await response.Content.ReadAsStringAsync();
-        PrintError(errorMessage);
+            if (response.IsSuccessStatusCode)
+            {
+                PrintSuccess("ok");
+                return;
+            }
+
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            PrintError(errorMessage);
+        }
+        catch (Exception e)
+        {
+            PrintError(e.Message);
+        }
     }
 
     private async Task Exit()
     {
-        if (_connection != null)
-        {
-            await _connection.StopAsync();
-        }
+        if (_connection != null) await _connection.StopAsync();
     }
-    
+
     private static void Subscribe(HubConnection connection)
     {
         connection.On<Message>(ChatEvents.ReceiveMessage, message =>
         {
-            var stringMessage = message.Type == MessageType.UserMessage ? 
-                $"{message.Time} u/{message.Sender}:{message.Content}" : 
-                $"{message.Time} g/{message.Receiver} u/{message.Sender}:{message.Content}";
-            
+            var stringMessage = message.Type == MessageType.UserMessage
+                ? $"{message.Time} u/{message.Sender}:{message.Content}"
+                : $"{message.Time} g/{message.Receiver} u/{message.Sender}:{message.Content}";
+
             Console.Write(new Rune(0x1f4ac));
             Console.WriteLine(" " + stringMessage);
         });
@@ -129,17 +133,11 @@ public class ChatClient
         connection.On<RpcResponse>(ChatEvents.RpcResponse, response =>
         {
             if (response.Status == RpcResponseStatus.Error)
-            {
                 PrintError(response.Message);
-            }
-            else if(response.Status == RpcResponseStatus.Warning)
-            {
+            else if (response.Status == RpcResponseStatus.Warning)
                 PrintWarning(response.Message);
-            }
             else
-            {
                 PrintSuccess("ok");
-            }
         });
     }
 
@@ -152,27 +150,25 @@ public class ChatClient
     {
         return _username != null && _token != null;
     }
-    
+
 
     // Return an http client with bearer token in the header
     private HttpClient GetHttpClient()
     {
         var httpClient = new HttpClient();
         if (IsAuthenticated())
-        {
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
                 "Bearer", _token);
-        }
         return httpClient;
     }
-    
+
     private async Task MainLoop()
     {
         while (true)
         {
             var input = Console.ReadLine();
             var command = CommandParser.Parse(input);
-            
+
             if (command == null)
             {
                 Console.WriteLine("Invalid input");
@@ -185,38 +181,24 @@ public class ChatClient
                 await Register(registerCommand.Username, password!);
             }
 
-            if (command is LoginCommand loginCommand)
-            {
-                await Login(loginCommand.Username, loginCommand.Password);
-            }
-            
+            if (command is LoginCommand loginCommand) await Login(loginCommand.Username, loginCommand.Password);
+
             if (command is ExitCommand _)
             {
                 await Exit();
                 Console.WriteLine("bye");
                 break;
             }
-            
+
             if (command is SendMessageCommand sendMessageCommand)
-            {
                 await SendMessage(sendMessageCommand.Receiver, sendMessageCommand.MessageType,
                     sendMessageCommand.Message);
-            }
 
-            if (command is CreateGroupCommand createGroupCommand)
-            {
-                await CreateGroup(createGroupCommand.GroupId);
-            }
+            if (command is CreateGroupCommand createGroupCommand) await CreateGroup(createGroupCommand.GroupId);
 
-            if (command is JoinGroupCommand joinGroupCommand)
-            {
-                await JoinGroup(joinGroupCommand.GroupId);
-            }
+            if (command is JoinGroupCommand joinGroupCommand) await JoinGroup(joinGroupCommand.GroupId);
 
-            if (command is LeaveGroupCommand leaveGroupCommand)
-            {
-                await LeaveGroup(leaveGroupCommand.GroupId);
-            }
+            if (command is LeaveGroupCommand leaveGroupCommand) await LeaveGroup(leaveGroupCommand.GroupId);
         }
     }
 
@@ -227,41 +209,36 @@ public class ChatClient
             PrintError("You haven't logged in");
             return;
         }
-        
+
         if (type == MessageType.UserMessage)
-        {
             await _connection!.InvokeAsync("SendUserMessage", receiver, content);
-        }
         else
-        {
             await _connection!.InvokeAsync("SendGroupMessage", receiver, content);
-        }
     }
-    
+
 
     private async Task CreateGroup(string groupId)
     {
-        
         if (!IsConnected() || !IsAuthenticated())
         {
             PrintError("You haven't logged in");
             return;
         }
+
         await _connection!.InvokeAsync("CreateGroup", groupId);
     }
 
     private async Task JoinGroup(string groupId)
     {
-        
         if (!IsConnected() || !IsAuthenticated())
         {
             PrintError("You haven't logged in");
             return;
         }
-        
+
         await _connection!.InvokeAsync("JoinGroup", groupId);
     }
-    
+
     private async Task LeaveGroup(string groupId)
     {
         if (!IsConnected() || !IsAuthenticated())
@@ -269,9 +246,10 @@ public class ChatClient
             PrintError("You haven't logged in");
             return;
         }
+
         await _connection!.InvokeAsync("LeaveGroup", groupId);
     }
-    
+
     public async Task Run()
     {
         Console.WriteLine("Chat client");

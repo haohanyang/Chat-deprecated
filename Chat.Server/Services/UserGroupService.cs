@@ -1,8 +1,4 @@
-using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using Chat.Common;
-using Microsoft.AspNetCore.Connections;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Chat.Server.Services;
 
@@ -11,9 +7,9 @@ public interface IUserGroupService
     public RpcResponse CreateGroup(string groupId);
     public RpcResponse LeaveGroup(string username, string groupId);
     public RpcResponse JoinGroup(string username, string groupId);
-    public ISet<string> GetUserGroups(string username);
+    public (bool, ISet<string>) GetUserGroups(string username);
     public IEnumerable<string> GetUserConnections(string username);
-    public ISet<string> GetGroupMembers(string username);
+    public (bool, ISet<string>) GetGroupMembers(string username);
 
     public void AddConnection(string username, string connectionId);
     public void RemoveConnection(string username, string connectionId);
@@ -21,15 +17,15 @@ public interface IUserGroupService
 
 public class UserGroupService : IUserGroupService
 {
+    // group to members
+    private static readonly IDictionary<string, ISet<string>> _groups = new Dictionary<string, ISet<string>>();
+
+    // user to groups joined
+    private static readonly IDictionary<string, ISet<string>> _users = new Dictionary<string, ISet<string>>();
+    private static readonly IDictionary<string, ISet<string>> _connections = new Dictionary<string, ISet<string>>();
     private readonly IDatabaseService _databaseService;
 
     private readonly ILogger<UserGroupService> _logger;
-    // group to members
-    private static readonly Dictionary<string, HashSet<string>> _groups = new();
-
-    // user to groups joined
-    private static readonly Dictionary<string, HashSet<string>> _users = new();
-    private static readonly Dictionary<string, HashSet<string>> _connections = new();
 
 
     public UserGroupService(IDatabaseService databaseService, ILogger<UserGroupService> logger)
@@ -38,14 +34,13 @@ public class UserGroupService : IUserGroupService
         _logger = logger;
     }
 
-    public Dictionary<string, HashSet<string>> Groups => _groups;
-    public Dictionary<string, HashSet<string>> Users => _users;
-    public Dictionary<string, HashSet<string>> Connections => _connections;
+    public IDictionary<string, ISet<string>> Groups => _groups;
+    public IDictionary<string, ISet<string>> Users => _users;
+    public IDictionary<string, ISet<string>> Connections => _connections;
 
 
     public RpcResponse CreateGroup(string groupId)
     {
-        
         lock (_groups)
         {
             if (_groups.TryGetValue(groupId, out var members))
@@ -65,14 +60,30 @@ public class UserGroupService : IUserGroupService
         lock (_users)
         {
             if (_groups.TryGetValue(groupId, out var members))
+            {
                 lock (members)
                 {
                     if (!members.Add(username))
                         // User already in the group
                         response = new RpcResponse(RpcResponseStatus.Error, "You are already in the group");
                 }
+            }
             else
-                return new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " doesn't exist");
+            {
+                // fetch data from database
+                var (groupExists, dbMembers) = _databaseService.GetGroupMembers(groupId);
+                if (groupExists)
+                {
+                    _groups.Add(groupId, dbMembers);
+                    if (!_groups[groupId].Add(username))
+                        // User already in the group
+                        response = new RpcResponse(RpcResponseStatus.Error, "You are already in the group");
+                }
+                else
+                {
+                    return new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " doesn't exist");
+                }
+            }
 
 
             if (_users.TryGetValue(username, out var groups))
@@ -90,7 +101,9 @@ public class UserGroupService : IUserGroupService
                     }
                 }
             else
-                return new RpcResponse(RpcResponseStatus.Error, "u/" + groupId + " doesn't exist");
+                // User's groups info should be in memory after connection 
+                // So we don't fetch from database
+                return new RpcResponse(RpcResponseStatus.Error, "u/" + username + " doesn't exist");
 
             return response ?? new RpcResponse(RpcResponseStatus.Success, "ok");
         }
@@ -104,14 +117,29 @@ public class UserGroupService : IUserGroupService
         lock (_users)
         {
             if (_groups.TryGetValue(groupId, out var members))
+            {
                 lock (members)
                 {
                     if (!members.Remove(username))
                         // User is not in the group
                         response = new RpcResponse(RpcResponseStatus.Error, "You are not in g/" + groupId);
                 }
+            }
             else
-                return new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " doesn't exist");
+            {
+                // fetch data from database
+                var (groupExists, dbMembers) = _databaseService.GetGroupMembers(groupId);
+                if (groupExists)
+                {
+                    _groups.Add(groupId, dbMembers);
+                    if (!_groups[groupId].Remove(username))
+                        response = new RpcResponse(RpcResponseStatus.Error, "You are not in g/" + groupId);
+                }
+                else
+                {
+                    return new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " doesn't exist");
+                }
+            }
 
 
             if (_users.TryGetValue(username, out var groups))
@@ -131,7 +159,7 @@ public class UserGroupService : IUserGroupService
             else
                 return new RpcResponse(RpcResponseStatus.Error, "u/" + username + " doesn't exist");
 
-       
+
             return response ?? new RpcResponse(RpcResponseStatus.Success, "ok");
         }
     }
@@ -147,33 +175,28 @@ public class UserGroupService : IUserGroupService
         return Enumerable.Empty<string>();
     }
 
-    public ISet<string> GetUserGroups(string username)
+    public (bool, ISet<string>) GetUserGroups(string username)
     {
         lock (_users)
         {
-            if (_users.TryGetValue(username, out var groups))
-            {
-                return groups;
-            }
+            if (_users.TryGetValue(username, out var groups)) return (true, groups);
             // fetch user's joined groups from database
-            var dbGroups = _databaseService.GetUserGroups(username);
-            _users.Add(username, dbGroups);
-            return dbGroups;
+            var (userExists, dbGroups) = _databaseService.GetUserGroups(username);
+            if (userExists) _users.Add(username, dbGroups);
+
+            return (userExists, dbGroups);
         }
     }
 
-    public ISet<string> GetGroupMembers(string groupId)
+    public (bool, ISet<string>) GetGroupMembers(string groupId)
     {
         lock (_groups)
         {
-            if (_groups.TryGetValue(groupId, out var members))
-            {
-                return members;
-            }
+            if (_groups.TryGetValue(groupId, out var members)) return (true, members);
             // fetch group members from database 
-            var dbMembers = _databaseService.GetGroupMembers(groupId);
-            _groups.Add(groupId, dbMembers);
-            return dbMembers;
+            var (groupExists, dbMembers) = _databaseService.GetGroupMembers(groupId);
+            if (groupExists) _groups.Add(groupId, dbMembers);
+            return (groupExists, dbMembers);
         }
     }
 

@@ -141,7 +141,7 @@ namespace Chat.Server.Data.Migrations
 
                     b.HasIndex("MemberId");
 
-                    b.ToTable("Membership");
+                    b.ToTable("Memberships");
                 });
 
             modelBuilder.Entity("Chat.Server.Models.UserMessage", b =>
