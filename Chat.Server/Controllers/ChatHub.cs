@@ -2,7 +2,6 @@ using Chat.Common;
 using Chat.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Chat.Server.Controllers;
 
@@ -51,12 +50,12 @@ public class ChatHub : Hub<IChatClient>
     }
 
     /// <summary>
-    /// Make sure the user exists (either in memory in database)
-    /// Notify the user if user doesn't exist
+    ///     Make sure the user exists (either in memory in database)
+    ///     Notify the user if user doesn't exist
     /// </summary>
     /// <param name="username">User's username</param>
     /// <returns>(user exists?, groups the user joined)</returns>
-    private async Task<(bool,ISet<string>)> GuardUser(string username)
+    private async Task<(bool, ISet<string>)> GuardUser(string username)
     {
         var currentUser = Context.UserIdentifier!;
         var (userExists, groups) = _userGroupService.GetUserGroups(username);
@@ -68,12 +67,12 @@ public class ChatHub : Hub<IChatClient>
     }
 
     /// <summary>
-    /// Make sure the group exists (either in memory in database).
-    /// Notify client if the group doesn't exist
+    ///     Make sure the group exists (either in memory in database).
+    ///     Notify client if the group doesn't exist
     /// </summary>
     /// <param name="groupId">Group's ID</param>
     /// <returns>(group exists?, group members)</returns>
-    private async Task<(bool,ISet<string>)> GuardGroup(string groupId)
+    private async Task<(bool, ISet<string>)> GuardGroup(string groupId)
     {
         var currentUser = Context.UserIdentifier!;
         var (groupExists, members) = _userGroupService.GetGroupMembers(groupId);
@@ -159,13 +158,13 @@ public class ChatHub : Hub<IChatClient>
     {
         var username = Context.UserIdentifier!;
 
-        var (userExists,groups) = await GuardUser(username);
+        var (userExists, groups) = await GuardUser(username);
         if (!userExists) return;
 
-        var (groupExists,members) = await GuardGroup(groupId);
+        var (groupExists, members) = await GuardGroup(groupId);
         if (!groupExists) return;
 
-        
+
         if (!members.Contains(username) || !groups.Contains(groupId))
         {
             await SendResponse(username,
@@ -186,15 +185,14 @@ public class ChatHub : Hub<IChatClient>
     {
         var username = Context.UserIdentifier!;
         var (receiverExists, _) = await GuardUser(receiver);
-        if (receiverExists)
-        {
-            var message = new Message(username, receiver, DateTime.Now, MessageType.UserMessage, content);
-            await Clients.User(receiver).ReceiveMessage(message);
-            await _taskQueue.QueueBackgroundWorkItemAsync(token =>
-                new AddUserMessageTask { CancellationToken = token, Message = message }
-            );
-            await Clients.User(username).RpcResponse(new RpcResponse(RpcResponseStatus.Success, "ok"));
-        }
+        if (!receiverExists) return;
+
+        var message = new Message(username, receiver, DateTime.Now, MessageType.UserMessage, content);
+        await Clients.User(receiver).ReceiveMessage(message);
+        await _taskQueue.QueueBackgroundWorkItemAsync(token =>
+            new AddUserMessageTask { CancellationToken = token, Message = message }
+        );
+        await Clients.User(username).RpcResponse(new RpcResponse(RpcResponseStatus.Success, "ok"));
     }
 
     private async Task SendResponse(string username, RpcResponse response)
