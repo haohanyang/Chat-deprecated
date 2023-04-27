@@ -36,5 +36,7 @@ public class MessageService : IMessageService
             _dbContext.UserMessages.Add(new UserMessage
                 { Sender = sender, Receiver = receiver, Content = message.Content });
         }
+
+        await _dbContext.SaveChangesAsync();
     }
 }
