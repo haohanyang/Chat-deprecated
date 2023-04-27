@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Chat.Common;
 using Chat.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +20,7 @@ public class UserGroupController : Controller
 
     [Authorize]
     [HttpPost("create_group")]
-    public ActionResult CreateGroup([FromBody] string groupId)
+    public async Task<ActionResult> CreateGroup([FromBody] string groupId)
     {
         try
         {
@@ -35,14 +34,9 @@ public class UserGroupController : Controller
                 return Unauthorized("Invalid user");
             }
 
-            var result = _userGroupService.CreateGroup(groupId);
-            if (result.Status == RpcResponseStatus.Success)
-            {
-                _logger.LogInformation("create_group({}) ok", groupId);
-                return Ok("ok");
-            }
-
-            return BadRequest(result);
+            await _userGroupService.CreateGroup(groupId);
+            _logger.LogInformation("create_group({}) ok", groupId);
+            return Ok("ok");
         }
         catch (Exception e)
         {
@@ -68,14 +62,10 @@ public class UserGroupController : Controller
                 return Unauthorized("Invalid user");
             }
 
-            var result = _userGroupService.JoinGroup(username, groupId);
-            if (result.Status == RpcResponseStatus.Success)
-            {
-                _logger.LogInformation("join_group({}) ok", groupId);
-                return Ok("ok");
-            }
+            _userGroupService.JoinGroup(username, groupId);
 
-            return BadRequest(result);
+            _logger.LogInformation("join_group({}) ok", groupId);
+            return Ok("ok");
         }
         catch (Exception e)
         {

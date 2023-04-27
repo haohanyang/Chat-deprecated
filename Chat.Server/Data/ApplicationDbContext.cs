@@ -1,10 +1,15 @@
 using Chat.Server.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chat.Server.Data;
 
-public class ApplicationDbContext : IdentityUserContext<ApplicationUser>
+internal class R : IdentityRole<string>
+{
+}
+
+public class ApplicationDbContext : IdentityDbContext<User>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -12,30 +17,75 @@ public class ApplicationDbContext : IdentityUserContext<ApplicationUser>
     }
 
     public DbSet<Group> Groups { get; set; }
-    
+    public DbSet<Membership> Memberships { get; set; }
+    public DbSet<GroupMessage> GroupMessages { get; set; }
+    public DbSet<UserMessage> UserMessages { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        options.UseSqlite("Data Source=:memory;");
+        // Read database configs from environment variables 
+        var server = Environment.GetEnvironmentVariable("DEV_DATABASE_SERVER");
+        var username = Environment.GetEnvironmentVariable("DEV_DATABASE_USERNAME");
+        var password = Environment.GetEnvironmentVariable("DEV_DATABASE_PASSWORD");
+        var database = Environment.GetEnvironmentVariable("DEV_DATABASE_DATABASE");
+        if (server == null || username == null || password == null || database == null)
+            throw new Exception("Environment variables of databases are not set");
+
+        var connectionString =
+            $"Server={server};User Id={username};Password={password};Database={database};TrustServerCertificate=true;";
+        options.UseSqlServer(connectionString);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // User-group relationships
-        modelBuilder.Entity<Membership>().Property(e => e.Id).ValueGeneratedOnAdd();
-        modelBuilder.Entity<ApplicationUser>().HasMany(e => e.Groups)
-            .WithMany(e => e.Members).UsingEntity<Membership>();
-        
-        // User-message relationships
-        modelBuilder.Entity<ApplicationUser>().HasMany(e => e.UserMessagesSent)
-            .WithOne(e => e.Sender).HasForeignKey(e => e.SenderId);
-        modelBuilder.Entity<ApplicationUser>().HasMany(e => e.UserMessagesReceived)
-            .WithOne(e => e.Receiver).HasForeignKey(e => e.ReceiverId);
-        modelBuilder.Entity<ApplicationUser>().HasMany(e => e.GroupMessagesSent)
-            .WithOne(e => e.Sender).HasForeignKey(e => e.SenderId);
-        
-        // Group-message relationships
-        modelBuilder.Entity<Group>().HasMany(e => e.Messages)
-            .WithOne(e => e.Receiver).HasForeignKey(e => e.ReceiverId);
         base.OnModelCreating(modelBuilder);
+
+        // User-group relationships
+        modelBuilder.Entity<User>()
+            .HasMany(e => e.Memberships)
+            .WithOne(e => e.User)
+            .OnDelete(DeleteBehavior.NoAction)
+            .HasForeignKey(e => e.UserId)
+            .IsRequired();
+
+        modelBuilder.Entity<Group>()
+            .HasIndex(e => e.GroupName)
+            .IsUnique();
+        modelBuilder.Entity<Group>()
+            .HasMany(e => e.Memberships)
+            .WithOne(e => e.Group)
+            .OnDelete(DeleteBehavior.NoAction)
+            .HasForeignKey(e => e.GroupId)
+            .IsRequired();
+
+
+        // User-message relationships
+        modelBuilder.Entity<User>()
+            .HasMany(e => e.UserMessagesSent)
+            .WithOne(e => e.Sender)
+            .HasForeignKey(e => e.SenderId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired();
+
+        modelBuilder.Entity<User>()
+            .HasMany(e => e.UserMessagesReceived)
+            .WithOne(e => e.Receiver)
+            .HasForeignKey(e => e.ReceiverId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired();
+
+        modelBuilder.Entity<User>()
+            .HasMany(e => e.GroupMessagesSent)
+            .WithOne(e => e.Sender)
+            .OnDelete(DeleteBehavior.NoAction)
+            .HasForeignKey(e => e.SenderId)
+            .IsRequired();
+
+        // Group-message relationships
+        modelBuilder.Entity<Group>()
+            .HasMany(e => e.Messages)
+            .WithOne(e => e.Receiver)
+            .OnDelete(DeleteBehavior.NoAction)
+            .HasForeignKey(e => e.ReceiverId);
     }
 }

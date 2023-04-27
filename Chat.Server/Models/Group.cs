@@ -1,10 +1,14 @@
-using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Chat.Server.Models;
 
 public class Group
 {
-    public string Id { get; set; }
-    public List<ApplicationUser> Members { get; } = new();
-    public List<GroupMessage> Messages { get; } = new();
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    public string GroupName { get; set; }
+
+    public IEnumerable<Membership> Memberships { get; set; } = new List<Membership>();
+    public List<GroupMessage> Messages { get; set; } = new();
 }

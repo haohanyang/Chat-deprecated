@@ -5,12 +5,13 @@ namespace Chat.Server.Models;
 public class Membership
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public string Id { get; set; }
-    public string MemberId { get; set; }
+    public int Id { get; set; }
 
-    [ForeignKey("MemberId")] public ApplicationUser Member { get; set; }
+    public string UserId { get; set; }
+    public User User { get; set; }
 
-    public string GroupId { get; set; }
+    public int GroupId { get; set; }
+    public Group Group { get; set; }
 
-    [ForeignKey("GroupId")] public Group Group { get; set; }
+    public DateTime JoinedTime { get; set; }
 }

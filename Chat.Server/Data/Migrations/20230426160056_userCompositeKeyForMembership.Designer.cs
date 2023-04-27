@@ -4,6 +4,7 @@ using Chat.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Chat.Server.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230426160056_userCompositeKeyForMembership")]
+    partial class userCompositeKeyForMembership
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,16 +73,13 @@ namespace Chat.Server.Data.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("GroupMessages");
+                    b.ToTable("GroupMessage");
                 });
 
             modelBuilder.Entity("Chat.Server.Models.Membership", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("GroupId")
                         .HasColumnType("int");
@@ -87,17 +87,11 @@ namespace Chat.Server.Data.Migrations
                     b.Property<DateTime>("JoinedTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
+                    b.HasKey("UserId", "GroupId");
 
                     b.HasIndex("GroupId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Memberships");
+                    b.ToTable("Membership");
                 });
 
             modelBuilder.Entity("Chat.Server.Models.User", b =>
@@ -194,7 +188,7 @@ namespace Chat.Server.Data.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("UserMessages");
+                    b.ToTable("UserMessage");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

@@ -12,9 +12,9 @@ namespace Chat.Server.Controllers;
 public class AuthenticationController : Controller
 {
     private readonly IAuthenticationTokenService _authenticationTokenService;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly UserManager<User> _userManager;
 
-    public AuthenticationController(UserManager<ApplicationUser> userManager,
+    public AuthenticationController(UserManager<User> userManager,
         IAuthenticationTokenService authenticationTokenService)
     {
         _userManager = userManager;
@@ -27,7 +27,7 @@ public class AuthenticationController : Controller
         if (!ModelState.IsValid) return BadRequest("Model state is invalid");
 
         var result = await _userManager.CreateAsync(
-            new ApplicationUser { UserName = request.Username }, request.Password);
+            new User { UserName = request.Username }, request.Password);
 
         if (result.Succeeded)
             return CreatedAtAction(nameof(Register), new { username = request.Username }, request);

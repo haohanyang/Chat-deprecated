@@ -1,231 +1,108 @@
-using Chat.Common;
+using Chat.Server.Data;
+using Chat.Server.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Chat.Server.Services;
 
 public interface IUserGroupService
 {
-    public RpcResponse CreateGroup(string groupId);
-    public RpcResponse LeaveGroup(string username, string groupId);
-    public RpcResponse JoinGroup(string username, string groupId);
-    public (bool, ISet<string>) GetUserGroups(string username);
-    public IEnumerable<string> GetUserConnections(string username);
-    public (bool, ISet<string>) GetGroupMembers(string username);
-
-    public void AddConnection(string username, string connectionId);
-    public void RemoveConnection(string username, string connectionId);
+    public Task CreateGroup(string groupId);
+    public Task LeaveGroup(string username, string groupId);
+    public Task JoinGroup(string username, string groupId);
+    public Task<IEnumerable<Group>> GetJoinedGroups(string username);
+    public Task<IEnumerable<User>> GetGroupMembers(string groupName);
 }
 
 public class UserGroupService : IUserGroupService
 {
-    // group to members
-    private static readonly IDictionary<string, ISet<string>> _groups = new Dictionary<string, ISet<string>>();
-
-    // user to groups joined
-    private static readonly IDictionary<string, ISet<string>> _users = new Dictionary<string, ISet<string>>();
-    private static readonly IDictionary<string, ISet<string>> _connections = new Dictionary<string, ISet<string>>();
-    private readonly IDatabaseService _databaseService;
+    private readonly ApplicationDbContext _dbContext;
 
     private readonly ILogger<UserGroupService> _logger;
 
 
-    public UserGroupService(IDatabaseService databaseService, ILogger<UserGroupService> logger)
+    public UserGroupService(ApplicationDbContext dbContext, ILogger<UserGroupService> logger)
     {
-        _databaseService = databaseService;
+        _dbContext = dbContext;
         _logger = logger;
     }
 
-    public IDictionary<string, ISet<string>> Groups => _groups;
-    public IDictionary<string, ISet<string>> Users => _users;
-    public IDictionary<string, ISet<string>> Connections => _connections;
-
-
-    public RpcResponse CreateGroup(string groupId)
+    public async Task CreateGroup(string groupName)
     {
-        lock (_groups)
+        if (await _dbContext.Groups.FirstOrDefaultAsync(e => e.GroupName == groupName) != null)
         {
-            if (_groups.TryGetValue(groupId, out var members))
-                // Group already exists
-                return new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " already exists");
-
-            _groups.Add(groupId, new HashSet<string>());
-            return new RpcResponse(RpcResponseStatus.Success, "ok");
+            throw new ArgumentException("Group " + groupName + " already exists");
         }
+        await _dbContext.Groups.AddAsync(new Group { GroupName = groupName });
+        await _dbContext.SaveChangesAsync();
     }
 
-    public RpcResponse JoinGroup(string username, string groupId)
+    public async Task JoinGroup(string username, string groupName)
     {
-        RpcResponse? response = null;
+        var user = await _dbContext.Users.Include(e => e.Memberships).FirstOrDefaultAsync(e => e.UserName == username);
+        var group = await _dbContext.Groups.Include(e => e.Memberships)
+            .FirstOrDefaultAsync(e => e.GroupName == groupName);
 
-        lock (_groups)
-        lock (_users)
-        {
-            if (_groups.TryGetValue(groupId, out var members))
-            {
-                lock (members)
-                {
-                    if (!members.Add(username))
-                        // User already in the group
-                        response = new RpcResponse(RpcResponseStatus.Error, "You are already in the group");
-                }
-            }
-            else
-            {
-                // fetch data from database
-                var (groupExists, dbMembers) = _databaseService.GetGroupMembers(groupId);
-                if (groupExists)
-                {
-                    _groups.Add(groupId, dbMembers);
-                    if (!_groups[groupId].Add(username))
-                        // User already in the group
-                        response = new RpcResponse(RpcResponseStatus.Error, "You are already in the group");
-                }
-                else
-                {
-                    return new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " doesn't exist");
-                }
-            }
+        if (user == null)
+            throw new ArgumentException("User " + username + " doesn't exist");
 
+        if (group == null)
+            throw new ArgumentException("Group " + groupName + " doesn't exist");
 
-            if (_users.TryGetValue(username, out var groups))
-                lock (groups)
-                {
-                    if (!groups.Add(groupId))
-                    {
-                        if (response == null)
-                        {
-                            // Inconsistent
-                        }
+        if (UserInGroup(user, group))
+            throw new ArgumentException("User " + username + " is already in group " + groupName);
 
-                        // User already in the group
-                        response = new RpcResponse(RpcResponseStatus.Error, "You are already in the group");
-                    }
-                }
-            else
-                // User's groups info should be in memory after connection 
-                // So we don't fetch from database
-                return new RpcResponse(RpcResponseStatus.Error, "u/" + username + " doesn't exist");
-
-            return response ?? new RpcResponse(RpcResponseStatus.Success, "ok");
-        }
+        await _dbContext.AddAsync(new Membership { User = user, Group = group });
+        await _dbContext.SaveChangesAsync();
     }
 
-    public RpcResponse LeaveGroup(string username, string groupId)
+    public async Task LeaveGroup(string username, string groupName)
     {
-        RpcResponse? response = null;
+        
+        var user = await _dbContext.Users.Include(e => e.Memberships).FirstOrDefaultAsync(e => e.UserName == username);
+        var group = await _dbContext.Groups.Include(e => e.Memberships)
+            .FirstOrDefaultAsync(e => e.GroupName == groupName);
+        
+        if (user == null)
+            throw new ArgumentException("User " + username + " doesn't exist");
 
-        lock (_groups)
-        lock (_users)
-        {
-            if (_groups.TryGetValue(groupId, out var members))
-            {
-                lock (members)
-                {
-                    if (!members.Remove(username))
-                        // User is not in the group
-                        response = new RpcResponse(RpcResponseStatus.Error, "You are not in g/" + groupId);
-                }
-            }
-            else
-            {
-                // fetch data from database
-                var (groupExists, dbMembers) = _databaseService.GetGroupMembers(groupId);
-                if (groupExists)
-                {
-                    _groups.Add(groupId, dbMembers);
-                    if (!_groups[groupId].Remove(username))
-                        response = new RpcResponse(RpcResponseStatus.Error, "You are not in g/" + groupId);
-                }
-                else
-                {
-                    return new RpcResponse(RpcResponseStatus.Error, "g/" + groupId + " doesn't exist");
-                }
-            }
+        if (group == null)
+            throw new ArgumentException("Group " + groupName + " doesn't exist");
 
+        if (!UserInGroup(user, group))
+            throw new ArgumentException("User " + username + " is not in group " + groupName);
 
-            if (_users.TryGetValue(username, out var groups))
-                lock (groups)
-                {
-                    if (!groups.Remove(groupId))
-                    {
-                        // User is not in the group
-                        if (response == null)
-                        {
-                            // Inconsistent
-                        }
-
-                        response = new RpcResponse(RpcResponseStatus.Error, "You are not in g/" + groupId);
-                    }
-                }
-            else
-                return new RpcResponse(RpcResponseStatus.Error, "u/" + username + " doesn't exist");
-
-
-            return response ?? new RpcResponse(RpcResponseStatus.Success, "ok");
-        }
+        var membership =  await _dbContext.Memberships.FirstOrDefaultAsync(e => e.UserId == user.Id && e.GroupId == group.Id);
+        _dbContext.Remove(membership!);
+        await _dbContext.SaveChangesAsync();
     }
 
-    public IEnumerable<string> GetUserConnections(string username)
-    {
-        lock (_connections)
-        {
-            if (_connections.TryGetValue(username, out var connections))
-                return connections;
-        }
 
-        return Enumerable.Empty<string>();
+    public async Task<IEnumerable<User>> GetGroupMembers(string groupName)
+    {
+        var group = await _dbContext.Groups.Include(e => e.Memberships)
+            .FirstOrDefaultAsync(e => e.GroupName == groupName);
+        if (group == null)
+            throw new ArgumentException("Group " + groupName + " doesn't exist");
+
+        return group.Memberships.Select(e => e.User);
     }
 
-    public (bool, ISet<string>) GetUserGroups(string username)
+    public async Task<IEnumerable<Group>> GetJoinedGroups(string username)
     {
-        lock (_users)
-        {
-            if (_users.TryGetValue(username, out var groups)) return (true, groups);
-            // fetch user's joined groups from database
-            var (userExists, dbGroups) = _databaseService.GetUserGroups(username);
-            if (userExists) _users.Add(username, dbGroups);
+        var user = await _dbContext.Users.Include(e => e.Memberships)
+            .FirstOrDefaultAsync(e => e.UserName == username);
+        if (user == null)
+            throw new ArgumentException("User " + user.UserName + " doesn't exist");
 
-            return (userExists, dbGroups);
-        }
+        return user.Memberships.Select(e => e.Group);
     }
 
-    public (bool, ISet<string>) GetGroupMembers(string groupId)
+    private bool UserInGroup(User user, Group group)
     {
-        lock (_groups)
-        {
-            if (_groups.TryGetValue(groupId, out var members)) return (true, members);
-            // fetch group members from database 
-            var (groupExists, dbMembers) = _databaseService.GetGroupMembers(groupId);
-            if (groupExists) _groups.Add(groupId, dbMembers);
-            return (groupExists, dbMembers);
-        }
-    }
-
-    public void AddConnection(string username, string connectionId)
-    {
-        // Add connection and user
-        lock (_connections)
-        {
-            if (!_connections.TryGetValue(username, out var connections))
-                _connections.Add(username, new HashSet<string>());
-
-            lock (_connections[username])
-            {
-                _connections[username].Add(connectionId);
-            }
-        }
-    }
-
-    public void RemoveConnection(string username, string connectionId)
-    {
-        lock (_connections)
-        {
-            if (_connections.TryGetValue(username, out var connections))
-                lock (connections)
-                {
-                    connections.Remove(connectionId);
-                    if (connections.Count == 0)
-                        _connections.Remove(username);
-                }
-        }
+        var groupId = group.Id;
+        return (
+            from membership in user.Memberships
+            where membership.GroupId == groupId
+            select membership.Id).Any();
     }
 }
