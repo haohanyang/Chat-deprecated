@@ -1,13 +1,9 @@
 using System.Text;
-using Chat.Server.Configs;
 using Chat.Server.Controllers;
 using Chat.Server.Data;
 using Chat.Server.Models;
 using Chat.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -19,15 +15,14 @@ builder.Services.AddLogging();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
-// Add services to the container.
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    options.UseSqlite(builder.Configuration.GetConnectionString("TestDb"));
-});
+// Add database 
+builder.Services.AddDbContext<ApplicationDbContext>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+// Add api endpoints
 builder.Services.AddControllers();
-// Add Swagger/OpenAPI
+
+// Add Swagger/OpenAPI interface
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -57,26 +52,24 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// DI for services
+
+// Add services
 builder.Services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
 builder.Services.AddScoped<IUserGroupService, UserGroupService>();
-builder.Services.AddScoped<IDatabaseService, DatabaseService>();
-builder.Services.AddHostedService<QueuedHostedDatabaseService>();
-builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => 
-{
-    if (!int.TryParse(builder.Configuration["QueueCapacity"], out var queueCapacity))
-    {
-        queueCapacity = 100;
-    }
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IConnectionService, ConnectionService>();
 
-    return new BackgroundTaskQueue(queueCapacity);
-});
+// Config authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options =>
 {
+    var secretKey = Environment.GetEnvironmentVariable("DEV_SECRET_KEY");
+    if (secretKey == null)
+        throw new Exception("Environment variable DEV_SECRET_KEY is not set");
+
     options.RequireHttpsMetadata = false;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -88,7 +81,7 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = "chat",
         ValidAudience = "chat",
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes("6E5A7234753778214125442A472D4B61")
+            Encoding.UTF8.GetBytes(secretKey)
         )
     };
     options.Events = new JwtBearerEvents
@@ -96,17 +89,15 @@ builder.Services.AddAuthentication(options =>
         OnMessageReceived = context =>
         {
             var accessToken = context.Request.Query["access_token"];
-            // If the request is for our hub...
             var path = context.HttpContext.Request.Path;
             if (!string.IsNullOrEmpty(accessToken) &&
                 path.StartsWithSegments("/chat"))
-                // Read the token out of the query string
                 context.Token = accessToken;
             return Task.CompletedTask;
         }
     };
 });
-builder.Services.AddIdentityCore<ApplicationUser>(options =>
+builder.Services.AddIdentityCore<User>(options =>
     {
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequiredLength = 4;
@@ -116,7 +107,6 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-// builder.Services.AddSingleton<IUserIdProvider, UsernameBasedUserIdProvider>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();

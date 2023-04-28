@@ -40,3 +40,7 @@ msbuild.wrn
 :memory
 :memory-shm
 :memory-wal
+
+.env
+
+*.drawio

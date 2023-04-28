@@ -15,20 +15,25 @@ public interface IAuthenticationTokenService
 
 public class AuthenticationTokenService : IAuthenticationTokenService
 {
-    private const int ExpirationDay = 30;
-    private const string SECRETS = "6E5A7234753778214125442A472D4B61";
+    private readonly int _expirationDay = 30;
     private readonly ILogger<AuthenticationTokenService> _logger;
+    private readonly string _secretKey;
 
     public AuthenticationTokenService(ILogger<AuthenticationTokenService> logger)
     {
+        var secretKey = Environment.GetEnvironmentVariable("DEV_SECRET_KEY");
+        if (secretKey == null)
+            throw new Exception("Environment variable DEV_SECRET_KEY is not set");
+
         _logger = logger;
+        _secretKey = secretKey;
     }
 
     public string? GenerateToken(IdentityUser user)
     {
         try
         {
-            var expiration = DateTime.UtcNow.AddDays(ExpirationDay);
+            var expiration = DateTime.UtcNow.AddDays(_expirationDay);
             if (user.UserName == null) throw new ArgumentException("UserName is null");
 
             var claims = new List<Claim>
@@ -40,7 +45,7 @@ public class AuthenticationTokenService : IAuthenticationTokenService
             };
 
             var signingCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SECRETS)),
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey)),
                 SecurityAlgorithms.HmacSha256Signature
             );
 

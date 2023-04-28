@@ -1,34 +1,27 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.AspNetCore.Identity;
 
 namespace Chat.Server.Models;
 
-public class UserMessage
+public class Message
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public string Id { get; set; }
+    public int Id { get; set; }
 
     public string SenderId { get; set; }
-    [ForeignKey("SenderId")] public ApplicationUser Sender { get; set; }
-
-    public string ReceiverId { get; set; }
-    [ForeignKey("ReceiverId")] public ApplicationUser Receiver { get; set; }
+    public User Sender { get; set; }
 
     public string Content { get; set; }
-    public DateTime Time { get; set; }
+    public DateTime SentTime { get; set; } = new();
 }
 
-public class GroupMessage
+public class UserMessage : Message
 {
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public string Id { get; set; }
-
-    public string SenderId { get; set; }
-    [ForeignKey("SenderId")] public ApplicationUser Sender { get; set; }
-
     public string ReceiverId { get; set; }
-    [ForeignKey("ReceiverId")] public Group Receiver { get; set; }
+    public User Receiver { get; set; }
+}
 
-    public string Content { get; set; }
-    public DateTime Time { get; set; }
+public class GroupMessage : Message
+{
+    public int ReceiverId { get; set; }
+    public Group Receiver { get; set; }
 }
