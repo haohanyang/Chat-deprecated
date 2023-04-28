@@ -40,7 +40,7 @@ public class UserGroupServiceTest : IClassFixture<TestDatabaseFixture>
 
         await dbContext.Database.BeginTransactionAsync();
         await userGroupService.CreateGroup(groupName);
-        await Assert.ThrowsAsync<ArgumentException>(async () => await userGroupService.CreateGroup("group1"));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await userGroupService.CreateGroup(groupName));
         dbContext.ChangeTracker.Clear();
     }
     

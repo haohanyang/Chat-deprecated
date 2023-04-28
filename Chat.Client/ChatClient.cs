@@ -13,8 +13,7 @@ public class ChatClient
     private HubConnection? _connection;
     private string? _token;
     private string? _username;
-
-
+    
     public ChatClient(string baseUrl)
     {
         _baseUrl = baseUrl;
