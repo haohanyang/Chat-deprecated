@@ -6,11 +6,11 @@ namespace Chat.Server.Services;
 
 public interface IUserGroupService
 {
-    public Task CreateGroup(string groupId);
-    public Task LeaveGroup(string username, string groupId);
-    public Task JoinGroup(string username, string groupId);
-    public Task<IEnumerable<Group>> GetJoinedGroups(string username);
-    public Task<IEnumerable<User>> GetGroupMembers(string groupName);
+    public Task CreateGroup(string groupName);
+    public Task LeaveGroup(string username, string groupName);
+    public Task JoinGroup(string username, string groupName);
+    public Task<IEnumerable<string>> GetJoinedGroups(string username);
+    public Task<IEnumerable<string>> GetGroupMembers(string groupName);
 }
 
 public class UserGroupService : IUserGroupService
@@ -77,24 +77,24 @@ public class UserGroupService : IUserGroupService
     }
 
 
-    public async Task<IEnumerable<User>> GetGroupMembers(string groupName)
+    public async Task<IEnumerable<string>> GetGroupMembers(string groupName)
     {
-        var group = await _dbContext.Groups.Include(e => e.Memberships)
+        var group = await _dbContext.Groups.Include(e => e.Memberships).ThenInclude(e => e.User)
             .FirstOrDefaultAsync(e => e.GroupName == groupName);
         if (group == null)
             throw new ArgumentException("Group " + groupName + " doesn't exist");
 
-        return group.Memberships.Select(e => e.User);
+        return group.Memberships.Select(e => e.User.UserName!);
     }
 
-    public async Task<IEnumerable<Group>> GetJoinedGroups(string username)
+    public async Task<IEnumerable<string>> GetJoinedGroups(string username)
     {
-        var user = await _dbContext.Users.Include(e => e.Memberships)
+        var user = await _dbContext.Users.Include(e => e.Memberships).ThenInclude(m => m.Group)
             .FirstOrDefaultAsync(e => e.UserName == username);
         if (user == null)
             throw new ArgumentException("User " + user.UserName + " doesn't exist");
 
-        return user.Memberships.Select(e => e.Group);
+        return user.Memberships.Select(e => e.Group.GroupName);
     }
 
     private bool UserInGroup(User user, Group group)

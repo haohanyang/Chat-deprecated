@@ -11,7 +11,7 @@ public interface IChatClient
 }
 
 // For demo test
-public class ChatHub2 : Hub<IChatClient>
+public class ChatHub2 : Hub
 {
     private readonly ILogger<ChatHub2> _logger = new LoggerFactory().CreateLogger<ChatHub2>();
 
@@ -27,17 +27,8 @@ public class ChatHub2 : Hub<IChatClient>
 
         return base.OnDisconnectedAsync(exception);
     }
-
-    public void Send()
-    {
-        Clients.All.ReceiveMessage(new Message
-        {
-            Sender = "sender", Receiver = "receiver", Content = "content", Type = MessageType.UserMessage,
-            Time = new DateTime()
-        });
-    }
+    
 }
-
 public class ChatHub : Hub<IChatClient>
 {
     private readonly IConnectionService _connectionService;
@@ -63,8 +54,8 @@ public class ChatHub : Hub<IChatClient>
         {
             // Add user to group communications
             var groups = await _userGroupService.GetJoinedGroups(username);
-            await Task.WhenAll(groups.Select(group =>
-                Groups.AddToGroupAsync(connectionId, group.GroupName)));
+            await Task.WhenAll(groups.Select(groupName =>
+                Groups.AddToGroupAsync(connectionId, groupName)));
         }
         catch (Exception e)
         {
@@ -85,8 +76,8 @@ public class ChatHub : Hub<IChatClient>
         {
             // Remove user from connections to groups
             var groups = await _userGroupService.GetJoinedGroups(username);
-            await Task.WhenAll(groups.Select(group =>
-                Groups.RemoveFromGroupAsync(connectionId, group.GroupName)));
+            await Task.WhenAll(groups.Select(groupName =>
+                Groups.RemoveFromGroupAsync(connectionId, groupName)));
         }
         catch (Exception e)
         {
@@ -100,29 +91,17 @@ public class ChatHub : Hub<IChatClient>
     // Test only, assume sender is valid
     public async Task SendGroupMessage(string sender, string groupName, string content)
     {
-        try
-        {
-            var groups = await _userGroupService.GetJoinedGroups(sender);
-            if (!groups.Select(e => e.GroupName).Contains(groupName))
-                throw new ArgumentException("You are is not in the group " + groupName);
-            await Clients.Groups(groupName).ReceiveMessage(new Message { Sender = sender, Receiver = groupName, Content = content});
-        }
-        catch (Exception e)
-        {
-            await Clients.User(sender).RpcResponse(new RpcResponse(RpcResponseStatus.Error, e.Message));
-        }
+        var groups = await _userGroupService.GetJoinedGroups(sender); 
+        if (!groups.Contains(groupName))
+            throw new ArgumentException("You are not in the group " + groupName);
+        await Clients.Group(groupName).ReceiveMessage(new Message
+            { Sender = sender, Receiver = groupName, Content = content });
     }
-    
+
     // Test only, assume sender and receivers are valid
     public async Task SendUserMessage(string sender, string receiver, string content)
     {
-        try
-        {
-            await Clients.User(receiver).ReceiveMessage(new Message { Sender = sender, Receiver = receiver, Content = content});
-        }
-        catch (Exception e)
-        {
-            await Clients.User(sender).RpcResponse(new RpcResponse(RpcResponseStatus.Error, e.Message));
-        }
+        await Clients.User(receiver)
+            .ReceiveMessage(new Message { Sender = sender, Receiver = receiver, Content = content });
     }
 }

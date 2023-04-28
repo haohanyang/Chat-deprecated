@@ -40,7 +40,7 @@ public class MessageController : Controller
             {
                 var members = await _userGroupService.GetGroupMembers(message.Receiver);
                 // Check if sender is in the group
-                if (!members.Select(e => e.UserName).Contains(username))
+                if (!members.Contains(username))
                     return BadRequest("You are not in the group " + message.Receiver);
 
                 // Send messages to group members
