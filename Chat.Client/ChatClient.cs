@@ -9,11 +9,12 @@ namespace Chat.Client;
 
 public class ChatClient
 {
-    private readonly string _baseUrl;
+    private readonly string _baseUrl; //"localhost:5000";
     private HubConnection? _connection;
     private string? _token;
     private string? _username;
-    
+    // private string _serverAddress = "localhost:5000";
+
     public ChatClient(string baseUrl)
     {
         _baseUrl = baseUrl;
@@ -38,7 +39,7 @@ public class ChatClient
     {
         using var httpClient = new HttpClient();
         var request = new AuthenticationRequest { Username = username, Password = password };
-        var response = await httpClient.PostAsJsonAsync(_baseUrl + "/login",
+        var response = await httpClient.PostAsJsonAsync(_baseUrl + "/api/login",
             request);
 
         if (response.IsSuccessStatusCode)
@@ -54,30 +55,35 @@ public class ChatClient
     {
         try
         {
-            var token = await GetToken(username, password);
-            if (token == null)
+            using var httpClient = new HttpClient();
+            var request = new AuthenticationRequest { Username = username, Password = password };
+            var response = await httpClient.PostAsJsonAsync( _baseUrl + "/api/login",
+                request);
+
+            if (response.IsSuccessStatusCode)
             {
-                PrintError("invalid credential");
-                return;
+                var authResponse = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
+                _token = authResponse!.Token;
+                _username = username;
+                _connection = new HubConnectionBuilder().WithUrl(_baseUrl + "/chat", options =>
+                {
+                    options.AccessTokenProvider = () => 
+                    Task.FromResult(GetToken(username, password).Result);
+                }).Build();
+                
+                Subscribe(_connection);
+                await _connection.StartAsync();
+                PrintSuccess("ok");
             }
-
-            _token = token;
-            _username = username;
-
-            _connection = new HubConnectionBuilder().WithUrl(_baseUrl + "/chat", options =>
-                options.AccessTokenProvider = () =>
-                    Task.FromResult(GetToken(username, password).Result)
-            ).Build();
-
-            // Subscribe
-            Subscribe(_connection);
-            // Connect to the hub
-            await _connection.StartAsync();
-            PrintSuccess("ok");
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                PrintError(errorMessage);
+            }
         }
         catch (Exception e)
         {
-            PrintError(e.Message);
+            PrintError("Unexpected error: " + e.Message);
         }
     }
 
@@ -88,12 +94,12 @@ public class ChatClient
         {
             using var httpClient = new HttpClient();
             var request = new AuthenticationRequest { Username = username, Password = password };
-            var response = await httpClient.PostAsJsonAsync(_baseUrl + "/register",
+            var response = await httpClient.PostAsJsonAsync(  _baseUrl + "/api/register",
                 request);
 
             if (response.IsSuccessStatusCode)
             {
-                PrintSuccess("ok");
+                PrintSuccess("Ok");
                 return;
             }
 
@@ -102,13 +108,14 @@ public class ChatClient
         }
         catch (Exception e)
         {
-            PrintError(e.Message);
+            PrintError("Unexpected error: "+e.Message);
         }
     }
 
     private async Task Exit()
     {
-        if (_connection != null) await _connection.StopAsync();
+        if (_connection != null) 
+            await _connection.StopAsync();
     }
 
     private static void Subscribe(HubConnection connection)
@@ -150,8 +157,7 @@ public class ChatClient
         return _username != null && _token != null;
     }
 
-
-    // Return an http client with bearer token in the header
+    
     private HttpClient GetHttpClient()
     {
         var httpClient = new HttpClient();

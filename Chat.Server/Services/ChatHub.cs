@@ -1,4 +1,5 @@
 using Chat.Common;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Chat.Server.Services;
@@ -29,6 +30,8 @@ public class ChatHub2 : Hub
     }
     
 }
+
+[Authorize]
 public class ChatHub : Hub<IChatClient>
 {
     private readonly IConnectionService _connectionService;
@@ -41,7 +44,7 @@ public class ChatHub : Hub<IChatClient>
         _userGroupService = userGroupService;
         _connectionService = connectionService;
     }
-
+    
     public override async Task OnConnectedAsync()
     {
         var username = Context.UserIdentifier!;

@@ -1,9 +1,8 @@
+using System.Security.Authentication;
 using System.Security.Claims;
 using Chat.Common;
-using Chat.Server.Models;
 using Chat.Server.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chat.Server.Controllers;
@@ -11,68 +10,76 @@ namespace Chat.Server.Controllers;
 [ApiController]
 public class AuthenticationController : Controller
 {
-    private readonly IAuthenticationTokenService _authenticationTokenService;
-    private readonly UserManager<User> _userManager;
+    private readonly IAuthenticationService _authenticationService;
+    private readonly ILogger<AuthenticationController> _logger;
 
-    public AuthenticationController(UserManager<User> userManager,
-        IAuthenticationTokenService authenticationTokenService)
+    public AuthenticationController(
+        IAuthenticationService authenticationService, ILogger<AuthenticationController> logger)
     {
-        _userManager = userManager;
-        _authenticationTokenService = authenticationTokenService;
+        _authenticationService = authenticationService;
+        _logger = logger;
     }
 
-    [HttpPost("register")]
+    [HttpPost("/api/register")]
     public async Task<IActionResult> Register([FromBody] AuthenticationRequest request)
     {
-        if (!ModelState.IsValid) return BadRequest("Model state is invalid");
-
-        var result = await _userManager.CreateAsync(
-            new User { UserName = request.Username }, request.Password);
-
-        if (result.Succeeded)
-            return CreatedAtAction(nameof(Register), new { username = request.Username }, request);
-
-        foreach (var error in result.Errors)
-            ModelState.AddModelError(error.Code, error.Description);
-        return BadRequest(string.Join("\n", result.Errors.Select(e => e.Description)));
-    }
-
-
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] AuthenticationRequest request)
-    {
-        if (!ModelState.IsValid)
+        if (!ModelState.IsValid) 
             return BadRequest("Model state is invalid");
 
-        var managedUser = await _userManager.FindByNameAsync(request.Username);
-        if (managedUser is null)
-            return BadRequest("User " + request.Username + " doesn't exist");
-
-        var isPasswordValid = await _userManager.CheckPasswordAsync(managedUser, request.Password);
-        if (!isPasswordValid)
-            return BadRequest("Password is incorrect");
-
-        var accessToken = _authenticationTokenService.GenerateToken(managedUser);
-        if (accessToken == null) return BadRequest("Token generation failed");
-
-        return Ok(new AuthenticationResponse
+        try
         {
-            Username = request.Username,
-            Token = accessToken
-        });
+            var result = await _authenticationService.Register(request.Username, request.Password);
+
+            if (result.Succeeded)
+                return CreatedAtAction(nameof(Register), new { username = request.Username }, request);
+
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return BadRequest("Errors:\n"+string.Join("\n", result.Errors.Select(e => e.Description)));
+        }
+        catch (ArgumentException e)
+        {
+            // User already exists
+            return BadRequest(e.Message);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Login {} with unknown error:{}", request.Username, e.Message);
+            return BadRequest("Unknown error");
+        }
+    }
+
+    
+    [HttpPost("/api/login")]
+    public async Task<IActionResult> Login([FromBody] AuthenticationRequest request)
+    {
+        if (!ModelState.IsValid) 
+            return BadRequest("Model state is invalid");
+        try
+        {
+            var token = await _authenticationService.Login(request.Username, request.Password);
+            return Ok(new AuthenticationResponse
+            {
+                Username = request.Username,
+                Token = token
+            });
+        }
+        catch (AuthenticationException e)
+        {
+            return BadRequest(e.Message);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Login {} with unknown error: {}", request.Username, e.Message);
+            return BadRequest("Unknown error");
+        }
     }
 
     [Authorize]
-    [HttpGet("auth")]
+    [HttpGet("/api/auth")]
     public ActionResult<string> CheckAuth1()
     {
         var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return "Hello " + username;
-    }
-
-    [HttpGet("noauth")]
-    public ActionResult<string> CheckAuth2()
-    {
-        return "You are not authenticated";
     }
 }

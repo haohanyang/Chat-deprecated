@@ -1,9 +1,10 @@
 using System.Text;
-using Chat.Server.Controllers;
+using Chat.Server.Configs;
 using Chat.Server.Data;
 using Chat.Server.Models;
 using Chat.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -54,7 +55,7 @@ builder.Services.AddSwaggerGen(options =>
 
 
 // Add services
-builder.Services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserGroupService, UserGroupService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IConnectionService, ConnectionService>();
@@ -94,7 +95,7 @@ builder.Services.AddAuthentication(options =>
                 path.StartsWithSegments("/chat"))
                 context.Token = accessToken;
             return Task.CompletedTask;
-        }
+        },
     };
 });
 builder.Services.AddIdentityCore<User>(options =>
@@ -107,6 +108,7 @@ builder.Services.AddIdentityCore<User>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.AddSingleton<IUserIdProvider, UsernameBasedUserIdProvider>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();
