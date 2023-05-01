@@ -1,18 +1,7 @@
-@model TModel
-
+@using Chat.Areas.WebPage.Components
 @{
-    Layout = null;
+    ViewData["Title"] = "Chat";
 }
-
-<!DOCTYPE html>
-
-<html>
-<head>
-    <title>title</title>
-</head>
-<body>
-<div>
-      
-</div>
-</body>
-</html>
+<main class="container py-5 pt-3 pb-3">
+    <component type="typeof(Chat)" render-mode="ServerPrerendered"/>
+</main>
