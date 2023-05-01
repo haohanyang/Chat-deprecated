@@ -113,4 +113,19 @@ public class InMemoryUserGroupService : IUserGroupService
             throw new ArgumentException("Group " + groupName + " doesn't exist");
         }
     }
+
+    public async Task<bool> UserExists(string username)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        return true;
+    }
+
+    public async Task<bool> GroupExists(string groupName)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        lock (Lock)
+        {
+            return _groups.ContainsKey("groupName");
+        }
+    }
 }

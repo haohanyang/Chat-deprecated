@@ -16,6 +16,8 @@ builder.Services.AddLogging();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
+// Razor pages
+
 // Add database 
 builder.Services.AddDbContext<ApplicationDbContext>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -56,9 +58,9 @@ builder.Services.AddSwaggerGen(options =>
 
 // Add services
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-builder.Services.AddScoped<IUserGroupService, UserGroupService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IConnectionService, ConnectionService>();
+builder.Services.AddScoped<IUserGroupService, UserGroupService>();
 
 // Config authentication
 builder.Services.AddAuthentication(options =>
@@ -95,7 +97,7 @@ builder.Services.AddAuthentication(options =>
                 path.StartsWithSegments("/chat"))
                 context.Token = accessToken;
             return Task.CompletedTask;
-        },
+        }
     };
 });
 builder.Services.AddIdentityCore<User>(options =>

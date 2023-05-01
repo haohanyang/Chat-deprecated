@@ -11,6 +11,8 @@ public interface IUserGroupService
     public Task JoinGroup(string username, string groupName);
     public Task<IEnumerable<string>> GetJoinedGroups(string username);
     public Task<IEnumerable<string>> GetGroupMembers(string groupName);
+    public Task<bool> UserExists(string username);
+    public Task<bool> GroupExists(string groupName);
 }
 
 public class UserGroupService : IUserGroupService
@@ -32,6 +34,9 @@ public class UserGroupService : IUserGroupService
         {
             throw new ArgumentException("Group " + groupName + " already exists");
         }
+
+        var group = new Group { GroupName = groupName };
+        _logger.LogError("groupId {}", group.Id);
         await _dbContext.Groups.AddAsync(new Group { GroupName = groupName });
         await _dbContext.SaveChangesAsync();
     }
@@ -104,5 +109,17 @@ public class UserGroupService : IUserGroupService
             from membership in user.Memberships
             where membership.GroupId == groupId
             select membership.Id).Any();
+    }
+
+    public async Task<bool> UserExists(string username)
+    {
+        var user = await  _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
+        return user != null;
+    }
+
+    public async Task<bool> GroupExists(string groupName)
+    {
+        var group = await _dbContext.Groups.FirstOrDefaultAsync(e => e.GroupName == groupName);
+        return group != null;
     }
 }

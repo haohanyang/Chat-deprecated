@@ -77,9 +77,9 @@ public class AuthenticationController : Controller
 
     [Authorize]
     [HttpGet("/api/auth")]
-    public ActionResult<string> CheckAuth1()
+    public ActionResult<string> CheckAuth()
     {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.NameIdentifier)!;
         return "Hello " + username;
     }
 }

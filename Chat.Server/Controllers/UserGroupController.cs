@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Chat.Common;
+using Chat.Server.Models;
 using Chat.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Chat.Server.Controllers;
 
@@ -11,11 +13,11 @@ public class UserGroupController : Controller
 {
     private readonly ILogger<UserGroupController> _logger;
     private readonly IHubContext<ChatHub, IChatClient> _hubContext;
-    private readonly UserGroupService _userGroupService;
+    private readonly IUserGroupService _userGroupService;
     private readonly IConnectionService _connectionService;
 
 
-    public UserGroupController(UserGroupService userGroupService, IHubContext<ChatHub, IChatClient> hubContext, IConnectionService connectionService , ILogger<UserGroupController> logger)
+    public UserGroupController(IUserGroupService userGroupService, IHubContext<ChatHub, IChatClient> hubContext, IConnectionService connectionService , ILogger<UserGroupController> logger)
     {
         _userGroupService = userGroupService;
         _hubContext = hubContext;
@@ -25,16 +27,23 @@ public class UserGroupController : Controller
 
     [Authorize]
     [HttpPost("/api/create_group")]
-    public async Task<ActionResult> CreateGroup([FromBody] string groupName)
+    public async Task<ActionResult> CreateGroup([FromQuery(Name = "group_name")] string groupName)
     {
         if (!ModelState.IsValid)
             return BadRequest("Model is invalid");
+        
+        if (groupName.IsNullOrEmpty())
+        {
+            return BadRequest("Group name is null");
+        }
+        
         var username = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         try
         {
             await _userGroupService.CreateGroup(groupName);
             _logger.LogInformation("Group {} was created by {}", groupName, username);
-            return Ok("Ok");
+            return Ok("ok");
+            // return CreatedAtAction(nameof(CreateGroup), new { id = 2 }, new Group { });
         }
         catch (ArgumentException e)
         {
@@ -50,10 +59,15 @@ public class UserGroupController : Controller
 
     [Authorize]
     [HttpPost("/api/join_group")]
-    public async Task<ActionResult> JoinGroup([FromBody] string groupName)
+    public async Task<ActionResult> JoinGroup([FromQuery(Name = "group_name")] string groupName)
     {
         if (!ModelState.IsValid)
             return BadRequest("Model is invalid");
+        if (groupName.IsNullOrEmpty())
+        {
+            return BadRequest("Group name is null");
+        }
+        
         var username = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         try
         {
@@ -61,6 +75,11 @@ public class UserGroupController : Controller
             
             // Add connections
             var connections = _connectionService.GetConnections(username);
+            Console.WriteLine("connections of " + groupName);
+            foreach (var connection in connections)
+            {
+                Console.WriteLine(connection);
+            }
             await Task.WhenAll(connections.Select(connectionId =>
                 _hubContext.Groups.AddToGroupAsync(connectionId, groupName)));
             
@@ -83,10 +102,15 @@ public class UserGroupController : Controller
     
     [Authorize]
     [HttpPost("/api/leave_group")]
-    public async Task<ActionResult> LeaveGroup([FromBody] string groupName)
+    public async Task<ActionResult> LeaveGroup([FromQuery(Name = "group_name")] string groupName)
     {
         if (!ModelState.IsValid)
             return BadRequest("Model is invalid");
+        if (groupName.IsNullOrEmpty())
+        {
+            return BadRequest("Group name is null");
+        }
+        
         var username = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         try
         {
