@@ -5,7 +5,7 @@
 
 <main role="main" class="container">
 
-    @if (Model.LoggedIn)
+    @if (Model.LoggedInUser != null)
     {
         <div class="alert alert-danger" role="alert">
             @Model.Error

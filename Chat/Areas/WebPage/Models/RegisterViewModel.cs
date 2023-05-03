@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Chat.Areas.WebPage.Models;
 
-public class RegisterViewModel
+public class RegisterViewModel : BaseViewModel
 {
 
 

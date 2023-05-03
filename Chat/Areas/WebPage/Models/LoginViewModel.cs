@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Chat.Areas.WebPage.Models;
 
-public class LoginViewModel
+public class LoginViewModel : BaseViewModel
 {
 
     [Required]
@@ -15,6 +15,5 @@ public class LoginViewModel
     public string Password { get; set; } = string.Empty;
 
     public string? Error { get; set; } = null;
-    public bool LoggedIn { get; set; } = false;
 
 }

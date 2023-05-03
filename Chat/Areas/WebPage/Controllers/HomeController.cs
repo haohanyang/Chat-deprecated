@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Chat.Areas.WebPage.Models;
 using Microsoft.AspNetCore.Mvc;
 using Chat.Areas.Api.Services;
+using Chat.Common.DTOs;
 
 namespace Chat.Areas.WebPage.Controllers;
 
@@ -21,10 +22,15 @@ public class HomeController : Controller
     public async Task<IActionResult> Index()
     {
         var model = new HomeViewModel();
-        if (TempData["RegisterMessage"] != null)
-        {
-            model.Message = (string?)TempData["RegisterMessage"];
+
+
+        model.RedirectMessage = (RedirectMessage?) TempData["RedirectMessage"];
+      
+        // If redirected from login
+        if (TempData["loggedinUser"] != null) {
+            model.LoggedInUser = (User) TempData["loggedinUser"]!;
         }
+
         try
         {
             var token = Request.Cookies["chat_access_token"];
@@ -35,7 +41,8 @@ public class HomeController : Controller
                 {
                     if (result.Claims.TryGetValue(ClaimTypes.NameIdentifier, out var username))
                     {
-                        model.Username = (string)username;
+                        Console.WriteLine("Valid user");
+                        model.LoggedInUser = new User { Username =  (string)username};
                     }
                 }
             }

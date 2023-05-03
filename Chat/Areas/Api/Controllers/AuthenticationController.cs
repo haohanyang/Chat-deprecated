@@ -1,7 +1,7 @@
 using System.Security.Authentication;
 using System.Security.Claims;
 using Chat.Areas.Api.Services;
-using Chat.Common.Dtos;
+using Chat.Common.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

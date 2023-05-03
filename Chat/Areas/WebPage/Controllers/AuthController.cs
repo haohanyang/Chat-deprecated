@@ -2,7 +2,7 @@ using System.Security.Authentication;
 using Chat.Areas.Api.Services;
 using Chat.Areas.WebPage.Models;
 using Microsoft.AspNetCore.Mvc;
-
+using Chat.Common.DTOs;
 
 namespace Chat.Areas.WebPage.Controllers;
 
@@ -39,7 +39,8 @@ public class AuthController : Controller
                 Path = "/",
                 SameSite = SameSiteMode.Strict
             });
-            TempData["RegisterMessage"] = "The account was successfully created";
+
+            TempData["loggedinUser"] = model.Username;
             return RedirectToAction("Index", "Home");
         }
 
@@ -63,12 +64,22 @@ public class AuthController : Controller
 
         if (Request.Cookies["chat_access_token"] != null)
         {
-            model.LoggedIn = true;
             model.Error = "You are already logged in";
             return View(model);
         }
 
         return View(model);
+    }
+
+    [HttpPost]
+    public IActionResult Logout() {
+        if (Request.Cookies["chat_access_token"] != null) {
+           Response.Cookies.Delete("chat_access_token");
+           TempData["RedirectMessage"] = new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "You have logged out." };
+        } else {
+            TempData["RedirectMessage"] = new RedirectMessage { Type = RedirectMessageType.ERROR, Message = "You haven't logged in." };
+        }
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]
@@ -92,6 +103,7 @@ public class AuthController : Controller
             var result = await _authenticationService.Register(model.Username, model.Email, model.Password);
             if (result.Succeeded)
             {
+                TempData["RedirectMessage"] = new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "The account was successfully created." };
                 return RedirectToAction("Index", "Home");
             }
             var errors = result.Errors.Select(e => e.Description).ToList();

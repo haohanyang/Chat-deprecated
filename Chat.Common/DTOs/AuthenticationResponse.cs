@@ -1,4 +1,4 @@
-namespace Chat.Common.Dtos;
+namespace Chat.Common.DTOs;
 
 public class AuthenticationResponse
 {

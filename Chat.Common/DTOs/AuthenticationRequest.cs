@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Chat.Common.Dtos;
+namespace Chat.Common.DTOs;
 
 public class AuthenticationRequest
 {
