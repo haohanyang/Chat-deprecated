@@ -28,7 +28,7 @@ public class HomeController : Controller
       
         // If redirected from login
         if (TempData["loggedinUser"] != null) {
-            model.LoggedInUser = (User) TempData["loggedinUser"]!;
+            model.LoggedInUser = (UserDTO) TempData["loggedinUser"]!;
         }
 
         try
@@ -42,7 +42,7 @@ public class HomeController : Controller
                     if (result.Claims.TryGetValue(ClaimTypes.NameIdentifier, out var username))
                     {
                         Console.WriteLine("Valid user");
-                        model.LoggedInUser = new User { Username =  (string)username};
+                        model.LoggedInUser = new UserDTO { Username =  (string)username};
                     }
                 }
             }

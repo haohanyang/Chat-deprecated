@@ -1,7 +1,9 @@
 using System.Text;
 using Chat.Areas.Api.Data;
+using Chat.Areas.Api.Misc;
 using Chat.Areas.Api.Models;
 using Chat.Areas.Api.Services;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -44,7 +46,11 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddDbContext<ApplicationDbContext>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IConnectionService, ConnectionService>();
+builder.Services.AddScoped<IUserGroupService, UserGroupService>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -94,16 +100,18 @@ builder.Services.AddIdentityCore<User>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-
+builder.Services.AddSingleton<IUserIdProvider, UsernameBasedUserIdProvider>();
+builder.Services.AddSignalR();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    app.UseExceptionHandler("/error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
-    app.UseWebAssemblyDebugging();
 }
 
 app.UseHttpsRedirection();
@@ -112,13 +120,13 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// app.Use(async (context, next) =>
-// {
-//     var token = context.Request.Cookies["chat_access_token"];
-//     if (!string.IsNullOrEmpty(token))
-//         context.Request.Headers.Add("Authorization", "Bearer " + token);
-//     await next();
-// });
+app.Use(async (context, next) =>
+{
+    var token = context.Request.Cookies["chat_access_token"];
+    if (!string.IsNullOrEmpty(token))
+        context.Request.Headers.Add("Authorization", "Bearer " + token);
+    await next();
+});
 
 app.UseAuthentication();
 
@@ -154,5 +162,7 @@ app.MapAreaControllerRoute(
     "chat/",
     new { controller = "Chat", action = "Index" }
 );
+
+app.MapHub<ChatHub>("/chat_hub");
 
 app.Run();
