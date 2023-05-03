@@ -1,0 +1,39 @@
+<div class="col-md-6 col-lg-7 col-xl-8">
+    <ContactStatus Name="@CurrentContactName" />
+    <div class="border rounded p-2" id="message-list" style="position: relative; height: 500px">
+        <Message />
+        <Message />
+        <Message />
+        <Message />
+        <Message />
+        <Message />
+        <Message />
+        <Message />
+
+        <Message />
+        <Message />
+        <Message />
+        <Message />
+    </div>
+
+    <div class="text-muted d-flex justify-content-between align-items-center pe-3 pt-3 mt-2">
+        <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava6-bg.webp" alt="avatar 3"
+            style="width: 40px; height: 100%;">
+        <div class="form-outline ml-2 flex-fill">
+            <input type="text" class="form-control form-control-lg" id="message-input">
+        </div>
+        <div>
+            <button class="ms-1 text-muted btn m-0 p-0" href="#!"><i class="fas fa-paperclip"></i></button>
+            <button class="ms-3 text-muted btn m-0 p-0" href="#!"><i class="fas fa-smile"></i></button>
+            <button class="ms-3 btn  m-0 p-0" href="#!"><i class="fas fa-paper-plane"></i></button>
+
+        </div>
+    </div>
+
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public string? CurrentContactName { get; set; }
+}

@@ -1,0 +1,39 @@
+﻿@model Chat.Areas.WebPage.Models.HomeViewModel;
+
+@{
+    ViewData["Title"] = "Home";
+}
+
+<main role="main" class="container">
+    @if (Model.Message != null)
+    {
+
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>@Model.Message</strong> You should check in on some of those fields below.
+            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    <section class="jumbotron text-center">
+        <div class="container">
+            <h1 class="jumbotron-heading home-heading">Chat</h1>
+            <p class="lead text-muted">Something short and leading about the collection below—its contents, the creator,
+                etc. Make it short and sweet, but not too short so folks don't simply skip over it entirely.</p>
+            <p>
+                @if (Model.Username == null)
+                {
+                    <a class="btn btn-primary" asp-area="WebPage" asp-controller="Auth" asp-action="Login">Login</a>
+                    <a class="btn btn-primary" asp-area="WebPage" asp-controller="Auth" asp-action="Register">Register</a>
+                }
+                else
+                {
+                <p>Hello @Model.Username</p>
+                <a asp-area="WebPage" asp-asp-controller="Chat" asp-action="Index" class="btn btn-outline-primary">Start
+                    Chatting</a>
+                }
+            </p>
+        </div>
+    </section>
+
+
+
+</main>

@@ -20,21 +20,22 @@ public class TestDatabaseFixture
                     context.Database.EnsureCreated();
                     var users = new List<User>
                     {
-                        new User { UserName = "user1" },
-                        new User { UserName = "user2" },
-                        new User { UserName = "user3" }
+                        new() { UserName = "user1" },
+                        new() { UserName = "user2" },
+                        new() { UserName = "user3" }
                     };
                     var groups = new List<Group>
                     {
-                        new Group { GroupName = "group1" },
-                        new Group { GroupName = "group2" },
-                        new Group { GroupName = "group3" }
+                        new() { GroupName = "group1" },
+                        new() { GroupName = "group2" },
+                        new() { GroupName = "group3" }
                     };
 
+                    // User1 and user2 in group1
                     var memberships = new List<Membership>
                     {
-                        new Membership { User = users[0], Group = groups[0]},
-                        new Membership { User = users[1], Group = groups[0]}
+                        new() { User = users[0], Group = groups[0] },
+                        new() { User = users[1], Group = groups[0] }
                     };
                     context.AddRange(users);
                     context.AddRange(groups);

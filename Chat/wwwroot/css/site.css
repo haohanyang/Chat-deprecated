@@ -1,0 +1,83 @@
+/* .divider:after,
+.divider:before {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #eee;
+}
+
+.h-custom {
+    height: calc(100% - 73px);
+}
+
+@media (max-width: 450px) {
+    .h-custom {
+        height: 100%;
+    }
+} */
+
+.home-heading {
+    padding-top: 100px;
+    padding-bottom: 20px;
+}
+
+.form-signin {
+    width: 100%;
+    max-width: 400px;
+    padding: 15px;
+    margin: 0 auto;
+    margin-top: 100px;
+}
+
+.form-signin .checkbox {
+    font-weight: 400;
+}
+
+.form-signin .form-control {
+    position: relative;
+    box-sizing: border-box;
+    height: auto;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.form-signin .form-control:focus {
+    z-index: 2;
+}
+
+.form-signin input[type="email"] {
+    margin-bottom: -1px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.form-signin input[type="password"] {
+    margin-bottom: 10px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+#contact-info {
+    height: 57px
+}
+
+.badge-dot {
+    border-radius: 50%;
+    height: 16px;
+    /* width: 20px; */
+    margin-left: 2.9rem;
+    /* margin-top: -1.75rem; */
+
+}
+
+#contact_list {
+    position: relative;
+    height: 570px;
+    overflow: scroll;
+    scrollbar-width: thin;
+}
+
+#message-list {
+    overflow: scroll;
+    scrollbar-width: thin;
+}

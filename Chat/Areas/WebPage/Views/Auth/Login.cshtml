@@ -1,0 +1,60 @@
+@model Chat.Areas.WebPage.Models.LoginViewModel;
+@{
+    ViewData["Title"] = "Login";
+}
+
+<main role="main" class="container">
+
+    @if (Model.LoggedIn)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.Error
+        </div>
+    }
+    else
+    {
+        <form asp-area="WebPage" asp-asp-controller="Auth" asp-action="Login" class="form-signin border rounded">
+            <div class="text-center">
+                <img class="mb-4" src="https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg" alt="" width="72"
+                    height="72">
+            </div>
+
+            <h1 class="h3 mb-3 font-weight-normal text-center">Please sign in</h1>
+
+            <div class="container">
+                <label for="login-username" class="form-label">Username</label>
+                <input asp-for="Username" type="text" class="form-control" id="login-username"
+                    aria-describedby="login-username-feedback" required>
+                <span asp-validation-for="Username" id="login-username-feedback" class="invalid-feedback">
+                </span>
+            </div>
+
+            <div class="container">
+                <label for="login-password" class="form-label">Password</label>
+                <input asp-for="Password" type="password" class="form-control" id="login-password"
+                    aria-describedby="login-password-feedback" required>
+                <span asp-validation-for="Password" id="login-password-feedback" class="invalid-feedback">
+                </span>
+            </div>
+
+            <div class="container">
+                Don't have an account?
+                <a asp-area="WebPage" asp-controller="Auth" asp-action="Register">Create an account
+                </a>
+            </div>
+
+            <div class="container text-center pt-2 pb-2">
+                <input type="submit" class="btn btn-outline-primary" value="Log in" />
+            </div>
+
+            @if (Model.Error != null)
+            {
+                <div class="container pt-2">
+                    <div class="alert alert-danger" role="alert">
+                        @Model.Error
+                    </div>
+                </div>
+            }
+        </form>
+    }
+</main>

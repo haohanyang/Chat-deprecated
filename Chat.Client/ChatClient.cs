@@ -1,9 +1,11 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Authentication;
 using System.Text;
 using Chat.Client.Command;
 using Chat.Common;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace Chat.Client;
 
@@ -13,7 +15,7 @@ public class ChatClient
     private HubConnection? _connection;
     private string? _token;
     private string? _username;
-    
+
     public ChatClient(string baseUrl)
     {
         _baseUrl = baseUrl;
@@ -38,7 +40,7 @@ public class ChatClient
     {
         using var httpClient = new HttpClient();
         var request = new AuthenticationRequest { Username = username, Password = password };
-        var response = await httpClient.PostAsJsonAsync(_baseUrl + "/login",
+        var response = await httpClient.PostAsJsonAsync(_baseUrl + "/api/login",
             request);
 
         if (response.IsSuccessStatusCode)
@@ -54,30 +56,35 @@ public class ChatClient
     {
         try
         {
-            var token = await GetToken(username, password);
-            if (token == null)
+            using var httpClient = new HttpClient();
+            var request = new AuthenticationRequest { Username = username, Password = password };
+            var response = await httpClient.PostAsJsonAsync( _baseUrl + "/api/login",
+                request);
+
+            if (response.IsSuccessStatusCode)
             {
-                PrintError("invalid credential");
-                return;
+                var authResponse = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
+                _token = authResponse!.Token;
+                _username = username;
+                _connection = new HubConnectionBuilder().WithUrl(_baseUrl + "/chat", options =>
+                {
+                    options.AccessTokenProvider = () => 
+                    Task.FromResult(GetToken(username, password).Result);
+                }).Build();
+                
+                RegisterCallbacks(_connection);
+                await _connection.StartAsync();
+                PrintSuccess("Ok");
             }
-
-            _token = token;
-            _username = username;
-
-            _connection = new HubConnectionBuilder().WithUrl(_baseUrl + "/chat", options =>
-                options.AccessTokenProvider = () =>
-                    Task.FromResult(GetToken(username, password).Result)
-            ).Build();
-
-            // Subscribe
-            Subscribe(_connection);
-            // Connect to the hub
-            await _connection.StartAsync();
-            PrintSuccess("ok");
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                PrintError(errorMessage);
+            }
         }
         catch (Exception e)
         {
-            PrintError(e.Message);
+            PrintError("Unexpected error: " + e.Message);
         }
     }
 
@@ -88,12 +95,12 @@ public class ChatClient
         {
             using var httpClient = new HttpClient();
             var request = new AuthenticationRequest { Username = username, Password = password };
-            var response = await httpClient.PostAsJsonAsync(_baseUrl + "/register",
+            var response = await httpClient.PostAsJsonAsync(  _baseUrl + "/api/register",
                 request);
 
             if (response.IsSuccessStatusCode)
             {
-                PrintSuccess("ok");
+                PrintSuccess("Ok");
                 return;
             }
 
@@ -102,16 +109,17 @@ public class ChatClient
         }
         catch (Exception e)
         {
-            PrintError(e.Message);
+            PrintError("Unexpected error: "+e.Message);
         }
     }
 
     private async Task Exit()
     {
-        if (_connection != null) await _connection.StopAsync();
+        if (_connection != null) 
+            await _connection.StopAsync();
     }
 
-    private static void Subscribe(HubConnection connection)
+    private static void RegisterCallbacks(HubConnection connection)
     {
         connection.On<Message>(ChatEvents.ReceiveMessage, message =>
         {
@@ -150,8 +158,7 @@ public class ChatClient
         return _username != null && _token != null;
     }
 
-
-    // Return an http client with bearer token in the header
+    
     private HttpClient GetHttpClient()
     {
         var httpClient = new HttpClient();
@@ -205,18 +212,39 @@ public class ChatClient
     {
         if (!IsConnected() || !IsAuthenticated())
         {
-            PrintError("You haven't logged in");
+            PrintError("You are not logged in");
             return;
         }
+        try
+        {
+            using var httpClient = GetHttpClient();
+            var response = await httpClient.PostAsJsonAsync(_baseUrl + "/api/send", new Message
+            {
+                Sender = _username ?? "",
+                Receiver = receiver,
+                Type = type,
+                Content = content,
+                Time = new DateTime()
+            });
 
-        if (type == MessageType.UserMessage)
-            await _connection!.InvokeAsync("SendUserMessage", receiver, content);
-        else
-            await _connection!.InvokeAsync("SendGroupMessage", receiver, content);
+            if (response.IsSuccessStatusCode)
+            {
+                PrintSuccess("Ok");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                PrintError(error);
+            }
+        }
+        catch (Exception e)
+        {
+            PrintError("Unexpected error: "+e.Message );
+        }
     }
 
 
-    private async Task CreateGroup(string groupId)
+    private async Task CreateGroup(string groupName)
     {
         if (!IsConnected() || !IsAuthenticated())
         {
@@ -224,10 +252,32 @@ public class ChatClient
             return;
         }
 
-        await _connection!.InvokeAsync("CreateGroup", groupId);
+        try
+        {
+            var httpClient = GetHttpClient();
+            var url = new Uri(QueryHelpers.AddQueryString(_baseUrl + "/api/create_group",
+                new Dictionary<string, string>()
+                {
+                    {"group_name", groupName}
+                }));
+            var response = await httpClient.PostAsJsonAsync(url, groupName);
+            if (response.IsSuccessStatusCode)
+            {
+                PrintSuccess("Ok");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                PrintError(error);
+            }
+        }
+        catch (Exception e)
+        {
+            PrintError("Unexpected error: " + e.Message);
+        }
     }
 
-    private async Task JoinGroup(string groupId)
+    private async Task JoinGroup(string groupName)
     {
         if (!IsConnected() || !IsAuthenticated())
         {
@@ -235,10 +285,32 @@ public class ChatClient
             return;
         }
 
-        await _connection!.InvokeAsync("JoinGroup", groupId);
+        try
+        {
+            var httpClient = GetHttpClient();
+            var url = new Uri(QueryHelpers.AddQueryString(_baseUrl + "/api/join_group",
+                new Dictionary<string, string>()
+                {
+                    {"group_name", groupName}
+                }));
+            var response = await httpClient.PostAsJsonAsync(url, groupName);
+            if (response.IsSuccessStatusCode)
+            {
+                PrintSuccess("Ok");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                PrintError(error);
+            }
+        }
+        catch (Exception e)
+        {
+            PrintError("Unexpected error: " + e.Message);
+        }
     }
 
-    private async Task LeaveGroup(string groupId)
+    private async Task LeaveGroup(string groupName)
     {
         if (!IsConnected() || !IsAuthenticated())
         {
@@ -246,8 +318,29 @@ public class ChatClient
             return;
         }
 
-        await _connection!.InvokeAsync("LeaveGroup", groupId);
-    }
+        try
+        {
+            var httpClient = GetHttpClient();
+            var url = new Uri(QueryHelpers.AddQueryString(_baseUrl + "/api/leave_group",
+                new Dictionary<string, string>()
+                {
+                    {"group_name", groupName}
+                }));
+            var response = await httpClient.PostAsJsonAsync(url, groupName);
+            if (response.IsSuccessStatusCode)
+            {
+                PrintSuccess("Ok");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                PrintError(error);
+            }
+        }
+        catch (Exception e)
+        {
+            PrintError("Unexpected error: " + e.Message);
+        }    }
 
     public async Task Run()
     {

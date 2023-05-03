@@ -44,3 +44,8 @@ msbuild.wrn
 .env
 
 *.drawio
+
+Chat.WebClient/wwwroot
+
+.env
+htmls

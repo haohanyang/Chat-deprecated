@@ -28,13 +28,13 @@ public class MessageService : IMessageService
         {
             var receiver = await _dbContext.Groups.FirstOrDefaultAsync(e => e.GroupName == message.Receiver);
             _dbContext.GroupMessages.Add(new GroupMessage
-                { Sender = sender!, Receiver = receiver!, Content = message.Content });
+                { Sender = sender!, Receiver = receiver!, Content = message.Content, SentTime = message.Time});
         }
         else
         {
             var receiver = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == message.Receiver);
             _dbContext.UserMessages.Add(new UserMessage
-                { Sender = sender, Receiver = receiver, Content = message.Content });
+                { Sender = sender, Receiver = receiver, Content = message.Content, SentTime = message.Time});
         }
 
         await _dbContext.SaveChangesAsync();

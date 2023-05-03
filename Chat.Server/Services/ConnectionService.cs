@@ -4,6 +4,8 @@ public interface IConnectionService
 {
     public void AddConnection(string username, string connectionId);
     public void RemoveConnection(string username, string connectionId);
+
+    public HashSet<string> GetConnections(string username);
 }
 
 public class ConnectionService : IConnectionService
@@ -41,4 +43,18 @@ public class ConnectionService : IConnectionService
             }
         }
     }
+
+    public HashSet<string> GetConnections(string username)
+    {
+        lock (_connections)
+        {
+            if (_connections.TryGetValue(username, out var connections))
+            {
+                return connections;
+            }
+            return new HashSet<string>();
+        }
+    }
+
+    
 }

@@ -1,9 +1,10 @@
 using System.Text;
-using Chat.Server.Controllers;
+using Chat.Server.Configs;
 using Chat.Server.Data;
 using Chat.Server.Models;
 using Chat.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -14,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+
+// Razor pages
 
 // Add database 
 builder.Services.AddDbContext<ApplicationDbContext>();
@@ -54,10 +57,10 @@ builder.Services.AddSwaggerGen(options =>
 
 
 // Add services
-builder.Services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
-builder.Services.AddScoped<IUserGroupService, UserGroupService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IConnectionService, ConnectionService>();
+builder.Services.AddScoped<IUserGroupService, UserGroupService>();
 
 // Config authentication
 builder.Services.AddAuthentication(options =>
@@ -107,6 +110,7 @@ builder.Services.AddIdentityCore<User>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.AddSingleton<IUserIdProvider, UsernameBasedUserIdProvider>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();
