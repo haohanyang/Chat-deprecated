@@ -1,5 +1,12 @@
+@using Chat.Areas.WebPage.Models;
+@model ChatViewModel;
+
 @{
     ViewData["Title"] = "Chat";
+}
+
+@section Header {
+    @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { LoggedInUser = Model.LoggedInUser })
 }
 
 @section Scripts {

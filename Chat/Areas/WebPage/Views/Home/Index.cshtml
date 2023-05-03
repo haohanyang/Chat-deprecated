@@ -1,6 +1,6 @@
 ﻿@using Chat.Areas.WebPage.Models;
 @using Chat.Common.DTOs;
-@model Chat.Areas.WebPage.Models.HomeViewModel;
+@model HomeViewModel;
 
 @{
     ViewData["Title"] = "Home";
@@ -33,6 +33,7 @@
                 else
                 {
                 <p>Hello @Model.LoggedInUser.Username</p>
+                    // TODO: fix
                 <a asp-area="WebPage" asp-asp-controller="Chat" asp-action="Index" class="btn btn-outline-primary">Start
                     Chatting</a>
                 }

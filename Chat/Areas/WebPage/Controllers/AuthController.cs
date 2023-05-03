@@ -3,7 +3,8 @@ using Chat.Areas.Api.Services;
 using Chat.Areas.WebPage.Models;
 using Microsoft.AspNetCore.Mvc;
 using Chat.Common.DTOs;
-
+using System.Text.Json;
+using System.Security.Claims;
 namespace Chat.Areas.WebPage.Controllers;
 
 [Area("WebPage")]
@@ -27,7 +28,6 @@ public class AuthController : Controller
             return View(model);
         }
 
-
         model.Error = null;
         try
         {
@@ -40,7 +40,7 @@ public class AuthController : Controller
                 SameSite = SameSiteMode.Strict
             });
 
-            TempData["loggedinUser"] = model.Username;
+            TempData["loggedinUser"] = JsonSerializer.Serialize(new UserDTO { Username = model.Username });
             return RedirectToAction("Index", "Home");
         }
 
@@ -58,26 +58,43 @@ public class AuthController : Controller
     }
 
     [HttpGet]
-    public IActionResult Login()
+    public async Task<IActionResult> Login()
     {
         var model = new LoginViewModel();
-
-        if (Request.Cookies["chat_access_token"] != null)
+        try
         {
-            model.Error = "You are already logged in";
-            return View(model);
+            var token = Request.Cookies["chat_access_token"];
+            if (token != null)
+            {
+                var result = await _authenticationService.ValidateToken(token!);
+                if (result.IsValid && result.Claims.TryGetValue(ClaimTypes.NameIdentifier, out var username))
+                {
+                    model.LoggedInUser = new UserDTO { Username = (string)username };
+                    model.Error = "You are already logged in.";
+                }
+            }
         }
-
+        catch (Exception e)
+        {
+            _logger.LogError("Login error with unexpected error:{}", e.Message);
+        }
         return View(model);
     }
 
+    /// TODO: fix
     [HttpPost]
-    public IActionResult Logout() {
-        if (Request.Cookies["chat_access_token"] != null) {
-           Response.Cookies.Delete("chat_access_token");
-           TempData["RedirectMessage"] = new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "You have logged out." };
-        } else {
-            TempData["RedirectMessage"] = new RedirectMessage { Type = RedirectMessageType.ERROR, Message = "You haven't logged in." };
+    public IActionResult Logout()
+    {
+        if (Request.Cookies["chat_access_token"] != null)
+        {
+            Response.Cookies.Delete("chat_access_token");
+            _logger.LogInformation("DElete cookie");
+            TempData["RedirectMessage"] = JsonSerializer.Serialize(new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "You have logged out." });
+        }
+        else
+        {
+            _logger.LogInformation("No kooci");
+            TempData["RedirectMessage"] = JsonSerializer.Serialize(new RedirectMessage { Type = RedirectMessageType.ERROR, Message = "You haven't logged in." });
         }
         return RedirectToAction("Index", "Home");
     }
@@ -103,7 +120,7 @@ public class AuthController : Controller
             var result = await _authenticationService.Register(model.Username, model.Email, model.Password);
             if (result.Succeeded)
             {
-                TempData["RedirectMessage"] = new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "The account was successfully created." };
+                TempData["RedirectMessage"] = JsonSerializer.Serialize(new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "The account was successfully created." });
                 return RedirectToAction("Index", "Home");
             }
             var errors = result.Errors.Select(e => e.Description).ToList();

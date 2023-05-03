@@ -3,6 +3,8 @@ using System.Security.Claims;
 using Chat.Areas.WebPage.Models;
 using Microsoft.AspNetCore.Mvc;
 using Chat.Areas.Api.Services;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Chat.Common.DTOs;
 
 namespace Chat.Areas.WebPage.Controllers;
@@ -24,11 +26,15 @@ public class HomeController : Controller
         var model = new HomeViewModel();
 
 
-        model.RedirectMessage = (RedirectMessage?) TempData["RedirectMessage"];
-      
+        if (TempData["RedirectMessage"] != null)
+        {
+            model.RedirectMessage = JsonSerializer.Deserialize<RedirectMessage>((string)TempData["RedirectMessage"]!);
+        }
+
         // If redirected from login
-        if (TempData["loggedinUser"] != null) {
-            model.LoggedInUser = (UserDTO) TempData["loggedinUser"]!;
+        if (TempData["loggedinUser"] != null)
+        {
+            model.LoggedInUser = JsonSerializer.Deserialize<UserDTO>((string)TempData["loggedinUser"]!);
         }
 
         try
@@ -37,14 +43,12 @@ public class HomeController : Controller
             if (token != null)
             {
                 var result = await _authenticationService.ValidateToken(token);
-                if (result.IsValid)
+
+                if (result.IsValid && result.Claims.TryGetValue(ClaimTypes.NameIdentifier, out var username))
                 {
-                    if (result.Claims.TryGetValue(ClaimTypes.NameIdentifier, out var username))
-                    {
-                        Console.WriteLine("Valid user");
-                        model.LoggedInUser = new UserDTO { Username =  (string)username};
-                    }
+                    model.LoggedInUser = new UserDTO { Username = (string)username };
                 }
+
             }
             return View(model);
         }

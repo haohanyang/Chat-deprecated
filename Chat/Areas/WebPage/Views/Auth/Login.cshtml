@@ -1,6 +1,11 @@
-@model Chat.Areas.WebPage.Models.LoginViewModel;
+@using Chat.Areas.WebPage.Models;
+@model LoginViewModel;
 @{
     ViewData["Title"] = "Login";
+}
+
+@section Header {
+    @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { LoggedInUser = Model.LoggedInUser })
 }
 
 <main role="main" class="container">
