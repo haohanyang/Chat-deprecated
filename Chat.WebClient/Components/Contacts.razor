@@ -1,0 +1,27 @@
+<div class="col-md-6 col-lg-5 col-xl-4 mb-4 mb-md-0">
+
+    <div class="p-1">
+        <ContactSearchBar />
+        <div id="contact_list" class="border rounded">
+            <ul class="list-unstyled mb-0">
+                <Contact OnClickCallback="OnClickCallback" ContactName="A" />
+                <Contact OnClickCallback="OnClickCallback" ContactName="B" />
+                <Contact OnClickCallback="OnClickCallback" />
+                <Contact OnClickCallback="OnClickCallback" />
+                <Contact OnClickCallback="OnClickCallback" />
+                <Contact OnClickCallback="OnClickCallback" />
+                <Contact />
+                <Contact />
+                <Contact />
+                <Contact />
+            </ul>
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<string> OnClickCallback { get; set; }
+}

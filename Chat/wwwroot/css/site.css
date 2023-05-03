@@ -1,4 +1,4 @@
-.divider:after,
+/* .divider:after,
 .divider:before {
     content: "";
     flex: 1;
@@ -14,26 +14,65 @@
     .h-custom {
         height: 100%;
     }
+} */
+
+.home-heading {
+    padding-top: 100px;
+    padding-bottom: 20px;
 }
 
-#chat3 .form-control {
-    border-color: transparent;
+.form-signin {
+    width: 100%;
+    max-width: 400px;
+    padding: 15px;
+    margin: 0 auto;
+    margin-top: 100px;
 }
 
-#chat3 .form-control:focus {
-    border-color: transparent;
-    box-shadow: inset 0px 0px 0px 1px transparent;
+.form-signin .checkbox {
+    font-weight: 400;
+}
+
+.form-signin .form-control {
+    position: relative;
+    box-sizing: border-box;
+    height: auto;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.form-signin .form-control:focus {
+    z-index: 2;
+}
+
+.form-signin input[type="email"] {
+    margin-bottom: -1px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.form-signin input[type="password"] {
+    margin-bottom: 10px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+#contact-info {
+    height: 57px
 }
 
 .badge-dot {
     border-radius: 50%;
-    height: 10px;
-    width: 10px;
+    height: 16px;
+    /* width: 20px; */
     margin-left: 2.9rem;
-    margin-top: -.75rem;
+    /* margin-top: -1.75rem; */
+
 }
 
 #contact_list {
+    position: relative;
+    height: 570px;
     overflow: scroll;
     scrollbar-width: thin;
 }

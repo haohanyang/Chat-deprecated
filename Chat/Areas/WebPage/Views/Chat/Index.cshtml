@@ -1,7 +1,11 @@
-@using Chat.Areas.WebPage.Components
 @{
     ViewData["Title"] = "Chat";
 }
 <main class="container py-5 pt-3 pb-3">
-    <component type="typeof(Chat)" render-mode="ServerPrerendered"/>
+    <div id="chat">
+        <div class="spinner-border loading-progress" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
 </main>

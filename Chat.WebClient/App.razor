@@ -1,0 +1,32 @@
+﻿@using Chat.WebClient.Components;
+
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card" id="chat3" style="border-radius: 15px;">
+            <div class="card-body">
+                <div class="row">
+                    <Contacts OnClickCallback=@ChangeCurrentContact />
+                    @if (CurrentContactName != null)
+                    {
+                        <CascadingValue Value="@CurrentContactName">
+                            <DiaglogBox />
+                        </CascadingValue>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+
+    public string? CurrentContactName { get; set; }
+    public string InputMessage { get; set; } = "";
+
+    public void ChangeCurrentContact(string newContactName)
+    {
+        CurrentContactName = newContactName;
+    }
+}

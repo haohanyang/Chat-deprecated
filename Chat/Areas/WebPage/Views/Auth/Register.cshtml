@@ -1,69 +1,87 @@
+@model Chat.Areas.WebPage.Models.RegisterViewModel;
 @{
     ViewData["Title"] = "Register";
 }
 
-<main class="vh-100">
-    <div class="container-fluid h-custom">
-        <div class="row d-flex justify-content-center align-items-center h-100">
-            <div class="col-md-9 col-lg-6 col-xl-5">
-                <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.webp"
-                     class="img-fluid" alt="Sample image">
+<main role="main" class="container">
+    <form asp-area="WebPage" asp-controller="Auth" asp-action="Register" method="post"
+        class="form-signin border rounded">
+        <div class="text-center">
+            <img class="mb-4" src="https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg" alt="" width="72"
+                height="72">
+        </div>
+
+        <h1 class="h3 mb-3 font-weight-normal text-center">Register</h1>
+
+        <div class="container row justify-content-between">
+            <div class="col-12 col-sm-6">
+                <label asp-for="FirstName" for="register-first-name" class="form-label">First name</label>
+                <input type="text" class="form-control" id="register-first-name"
+                    aria-describedby="register-first-name-feedback" required>
+                <span asp-validation-for="FirstName" id="register-first-name-feedback" class="invalid-feedback">
+                </span>
             </div>
-            <div class="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
-                <form>
-                    <div class="d-flex flex-row align-items-center justify-content-center justify-content-lg-start">
-                        <p class="lead fw-normal mb-0 me-3">Sign in with</p>
-                        <button type="button" class="btn btn-primary btn-floating mx-1">
-                            <i class="fab fa-facebook-f"></i>
-                        </button>
 
-                        <button type="button" class="btn btn-primary btn-floating mx-1">
-                            <i class="fab fa-twitter"></i>
-                        </button>
-
-                        <button type="button" class="btn btn-primary btn-floating mx-1">
-                            <i class="fab fa-linkedin-in"></i>
-                        </button>
-                    </div>
-
-                    <div class="divider d-flex align-items-center my-4">
-                        <p class="text-center fw-bold mx-3 mb-0">Or</p>
-                    </div>
-
-                    <!-- Email input -->
-                    <div class="form-outline mb-4">
-                        <input required type="text" id="register-username" class="form-control form-control-lg"/>
-                        <label class="form-label" for="register-username">Username</label>
-                    </div>
-
-                    <!-- Email input -->
-                    <div class="form-outline mb-4">
-                        <input required type="email" id="register-email" class="form-control form-control-lg"/>
-                        <label class="form-label" for="register-email">Email address</label>
-                    </div>
-
-                    <!-- Password input -->
-                    <div class="form-outline mb-3">
-                        <input required type="password" id="register-password" class="form-control form-control-lg"/>
-                        <label class="form-label" for="register-password">Password</label>
-                    </div>
-
-                    <div class="text-center text-lg-start mt-4 pt-2">
-                        <button type="button" class="btn btn-primary btn-lg"
-                                style="padding-left: 2.5rem; padding-right: 2.5rem;">
-                            Register
-                        </button>
-                        <p class="small fw-bold mt-2 pt-1 mb-0">
-                            Already have an account?
-                            <a asp-area="WebPage" asp-controller="Auth" asp-action="Login"
-                               class="link-danger">
-                                Login
-                            </a>
-                        </p>
-                    </div>
-
-                </form>
+            <div class="col-12 col-sm-6 pr-0">
+                <label for="register-last-name" class="form-label">Last name</label>
+                <input asp-for="LastName" type="text" class="form-control" id="register-last-name"
+                    aria-describedby="register-last-name-feedback" required>
+                <span asp-validation-for="LastName" id="register-last-name-feedback" class="invalid-feedback">
+                </span>
             </div>
         </div>
-    </div>
+
+        <div class="container">
+            <label for="register-email" class="form-label">Email</label>
+            <input asp-for="Email" type="email" class="form-control" id="register-email"
+                aria-describedby="register-email-feedback" required>
+            <span asp-validation-for="Email" id="register-email-feedback" class="invalid-feedback">
+            </span>
+        </div>
+
+        <div class="container">
+            <label for="register-username" class="form-label">Username</label>
+            <input asp-for="Username" type="text" class="form-control" id="register-username"
+                aria-describedby="register-username-feedback" required>
+            <span asp-validation-for="Username" id="register-username-feedback" class="invalid-feedback">
+            </span>
+        </div>
+
+        <div class="container">
+            <label for="register-password" class="form-label">Password</label>
+            <input asp-for="Password" type="password" class="form-control" id="register-password"
+                aria-describedby="register-password-feedback" required>
+            <span asp-validation-for="Password" id="register-password-feedback" class="invalid-feedback">
+            </span>
+        </div>
+
+        <div class="container">
+            Already have an account ? <a asp-area="WebPage" asp-controller="Auth" asp-action="Login">Login</a>
+        </div>
+
+        <div class="container text-center pt-2 pb-2">
+            <input type="submit" class="btn btn-outline-primary" value="Register" />
+        </div>
+
+        @if (Model.Errors.Count > 0)
+        {
+            <div class="container pt-2">
+                <div class="alert alert-danger" role="alert">
+                    @if (Model.Errors.Count == 1)
+                    {
+                        @Model.Errors[0]
+                    }
+                    else
+                    {
+                        <ul>
+                            @foreach (var error in Model.Errors)
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        }
+    </form>
 </main>

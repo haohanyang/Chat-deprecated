@@ -1,67 +1,60 @@
+@model Chat.Areas.WebPage.Models.LoginViewModel;
 @{
     ViewData["Title"] = "Login";
 }
 
-<main class="vh-100">
-    <div class="container-fluid h-custom">
-        <div class="row d-flex justify-content-center align-items-center h-100">
-            <div class="col-md-9 col-lg-6 col-xl-5">
-                <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.webp"
-                     class="img-fluid" alt="Sample image">
-            </div>
-            <div class="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
-                <form>
-                    <div class="d-flex flex-row align-items-center justify-content-center justify-content-lg-start">
-                        <p class="lead fw-normal mb-0 me-3">Sign in with</p>
-                        <button type="button" class="btn btn-primary btn-floating mx-1">
-                            <i class="fab fa-facebook-f"></i>
-                        </button>
+<main role="main" class="container">
 
-                        <button type="button" class="btn btn-primary btn-floating mx-1">
-                            <i class="fab fa-twitter"></i>
-                        </button>
-
-                        <button type="button" class="btn btn-primary btn-floating mx-1">
-                            <i class="fab fa-linkedin-in"></i>
-                        </button>
-                    </div>
-
-                    <div class="divider d-flex align-items-center my-4">
-                        <p class="text-center fw-bold mx-3 mb-0">Or</p>
-                    </div>
-
-                    <!-- Email input -->
-                    <div class="form-outline mb-4">
-                        <input type="text" id="login-username" class="form-control form-control-lg"/>
-                        <label class="form-label" for="login-username">Username</label>
-                    </div>
-
-                    <!-- Password input -->
-                    <div class="form-outline mb-3">
-                        <input type="password" id="login-password" class="form-control form-control-lg"/>
-                        <label class="form-label" for="login-password">Password</label>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center">
-                        <a href="#" class="text-body">Forgot password?</a>
-                    </div>
-
-                    <div class="text-center text-lg-start mt-4 pt-2">
-                        <button type="button" class="btn btn-primary btn-lg"
-                                style="padding-left: 2.5rem; padding-right: 2.5rem;">
-                            Login
-                        </button>
-                        <p class="small fw-bold mt-2 pt-1 mb-0">
-                            Don't have an account?
-                            <a asp-area="WebPage" asp-controller="Auth" asp-action="Register"
-                               class="link-danger">
-                                Register
-                            </a>
-                        </p>
-                    </div>
-
-                </form>
-            </div>
+    @if (Model.LoggedIn)
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.Error
         </div>
-    </div>
+    }
+    else
+    {
+        <form asp-area="WebPage" asp-asp-controller="Auth" asp-action="Login" class="form-signin border rounded">
+            <div class="text-center">
+                <img class="mb-4" src="https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg" alt="" width="72"
+                    height="72">
+            </div>
+
+            <h1 class="h3 mb-3 font-weight-normal text-center">Please sign in</h1>
+
+            <div class="container">
+                <label for="login-username" class="form-label">Username</label>
+                <input asp-for="Username" type="text" class="form-control" id="login-username"
+                    aria-describedby="login-username-feedback" required>
+                <span asp-validation-for="Username" id="login-username-feedback" class="invalid-feedback">
+                </span>
+            </div>
+
+            <div class="container">
+                <label for="login-password" class="form-label">Password</label>
+                <input asp-for="Password" type="password" class="form-control" id="login-password"
+                    aria-describedby="login-password-feedback" required>
+                <span asp-validation-for="Password" id="login-password-feedback" class="invalid-feedback">
+                </span>
+            </div>
+
+            <div class="container">
+                Don't have an account?
+                <a asp-area="WebPage" asp-controller="Auth" asp-action="Register">Create an account
+                </a>
+            </div>
+
+            <div class="container text-center pt-2 pb-2">
+                <input type="submit" class="btn btn-outline-primary" value="Log in" />
+            </div>
+
+            @if (Model.Error != null)
+            {
+                <div class="container pt-2">
+                    <div class="alert alert-danger" role="alert">
+                        @Model.Error
+                    </div>
+                </div>
+            }
+        </form>
+    }
 </main>
