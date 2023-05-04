@@ -46,7 +46,7 @@ public class UserGroupService : IUserGroupService
         if (UserInGroup(user, group))
             throw new ArgumentException("User " + username + " is already in group " + groupName);
 
-        var membership = new Membership { User = user, Group = group };
+        var membership = new Membership { User = user, Group = group, Username = user.UserName!, GroupName = group.GroupName };
         await _dbContext.AddAsync(membership);
         await _dbContext.SaveChangesAsync();
         return membership.Id;

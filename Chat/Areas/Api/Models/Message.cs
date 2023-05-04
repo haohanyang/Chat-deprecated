@@ -8,6 +8,7 @@ public class Message
     public int Id { get; set; }
 
     public string SenderId { get; set; }
+    public string SenderUsername {get;set;}
     public User Sender { get; set; }
 
     public string Content { get; set; }
@@ -17,6 +18,7 @@ public class Message
 public class UserMessage : Message
 {
     public string ReceiverId { get; set; }
+    public string ReceiverUsername {get;set;}
     public User Receiver { get; set; }
 }
 
@@ -24,4 +26,5 @@ public class GroupMessage : Message
 {
     public int ReceiverId { get; set; }
     public Group Receiver { get; set; }
+    public string GroupName {get;set;}
 }

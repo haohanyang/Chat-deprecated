@@ -18,11 +18,24 @@ public class MessageService : IMessageService
     {
         var sender = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == message.Sender);
 
+        if (sender == null) {
+            throw new ArgumentException("User " + message.Sender + " doesn't exist");
+        }
+
         if (message.Type == MessageType.GroupMessage)
         {
             var receiver = await _dbContext.Groups.FirstOrDefaultAsync(e => e.GroupName == message.Receiver);
+            if (receiver == null) {
+                throw new ArgumentException("Group " + message.Receiver + " doesn't exist");
+            }
             var dbMessage = new GroupMessage
-                { Sender = sender!, Receiver = receiver!, Content = message.Content, SentTime = message.Time};
+                { 
+                    Sender = sender,
+                    SenderUsername = sender.UserName!, 
+                    Receiver = receiver, 
+                    GroupName = receiver.GroupName,
+                    Content = message.Content, 
+                    SentTime = message.Time};
             _dbContext.GroupMessages.Add(dbMessage);
             await _dbContext.SaveChangesAsync();
             return dbMessage.Id;
@@ -30,11 +43,59 @@ public class MessageService : IMessageService
         else
         {
             var receiver = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == message.Receiver);
+            if (receiver == null) {
+                throw new ArgumentException("User " + message.Receiver + " doesn't exist");
+            }
+
             var dbMessage = new UserMessage
-                { Sender = sender!, Receiver = receiver!, Content = message.Content, SentTime = message.Time};
+                { 
+                    Sender = sender, 
+                    SenderUsername = sender.UserName!,
+                    Receiver = receiver, 
+                    ReceiverUsername = receiver.UserName!,
+                    Content = message.Content, 
+                    SentTime = message.Time
+                    };
             _dbContext.UserMessages.Add(dbMessage);
             await _dbContext.SaveChangesAsync();
             return dbMessage.Id;
         }
+    }
+
+    public static MessageDTO Convert(Message message) {
+        if (message is UserMessage userMessage) {
+            return new MessageDTO { 
+                Sender = message.SenderUsername, 
+                Time = message.SentTime, 
+                Receiver = userMessage.ReceiverUsername, 
+                Content = message.Content,
+                Type = MessageType.UserMessage
+                };
+        } else  {
+            var groupMessage = message as GroupMessage;
+            return new MessageDTO { 
+                Sender = message.SenderUsername, 
+                Time = message.SentTime, 
+                Receiver = groupMessage!.GroupName, 
+                Content = message.Content,
+                Type = MessageType.GroupMessage
+            };
+        }
+    }
+
+    public async Task<IEnumerable<MessageDTO>> GetAllMessages(string username) {
+
+        var user = await _dbContext.Users
+            .FirstOrDefaultAsync(u => u.UserName == username);
+
+        if (user == null) {
+            throw new ArgumentException("User " + username + " doesn't exist");
+        }
+        var query =  from m in _dbContext.UserMessages
+                        where m.Sender == user || m.Receiver == user
+                        select m;
+        var messages = await query.ToListAsync();
+        /// TODO: group messages
+        return messages.Select(m => Convert(m));
     }
 }

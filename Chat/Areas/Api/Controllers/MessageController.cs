@@ -26,6 +26,19 @@ public class MessageController : ControllerBase
         _messageService = messageService;
     }
 
+    [HttpGet("all_messages")]
+    public async Task<IActionResult> GetAllMessages([FromQuery(Name = "username")] string username) {
+        try {
+            var messages = await _messageService.GetAllMessages(username);
+            return Ok(messages);
+        } catch (ArgumentException e) {
+            return BadRequest(e.Message);
+        } catch (Exception e) {
+            _logger.LogError("Failed to get all messages with unexpected error:{}" + e.Message);
+            return BadRequest("Unexpected error");
+        }
+    }
+
     [Authorize]
     [HttpPost("send")]
     public async Task<ActionResult> SendMessage([FromBody] MessageDTO message)
