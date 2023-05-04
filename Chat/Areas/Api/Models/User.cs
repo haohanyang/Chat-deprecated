@@ -4,6 +4,8 @@ namespace Chat.Areas.Api.Models;
 
 public class User : IdentityUser
 {
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
     public IEnumerable<Membership> Memberships { get; set; } = new List<Membership>();
     public IEnumerable<UserMessage> UserMessagesSent { get; set; } = new List<UserMessage>();
     public IEnumerable<UserMessage> UserMessagesReceived { get; set; } = new List<UserMessage>();

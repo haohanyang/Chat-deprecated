@@ -4,6 +4,7 @@ using System.Security.Authentication;
 using System.Security.Claims;
 using System.Text;
 using Chat.Areas.Api.Models;
+using Chat.Common.DTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
@@ -28,36 +29,32 @@ public class AuthenticationService : IAuthenticationService
     /// <summary>
     ///     Create the specified user with given username and password
     /// </summary>
-    /// <param name="username">username</param>
-    /// <param name="password">password</param>
     /// <returns>The <see cref="IdentityResult" /> that indicates success or failure.</returns>
-    /// <exception cref="ArgumentException">If username already exists</exception>
-    public async Task<IdentityResult> Register(string username, string email, string password)
+    public async Task<IdentityResult> Register(AuthenticationRequest request)
     {
         // Check if username already exists
-        var user = await _userManager.FindByNameAsync(username);
+        var user = await _userManager.FindByNameAsync(request.Username);
 
         if (user != null)
         {
-            throw new ArgumentException("User " + username + " already exists");
+            throw new ArgumentException("User " + request.Username + " already exists");
         }
-        var result = await _userManager.CreateAsync(new User { UserName = username, Email = email }, password);
+        var result = await _userManager.CreateAsync(
+            new User { UserName = request.Username, Email = request.Email, FirstName = request.FirstName, LastName = request.LastName}, 
+            request.Password);
         return result;
     }
 
     /// <summary>
     ///     Tries to login with the given username and password. Retrieves the token if the authentication succeeds.
     /// </summary>
-    /// <param name="username">username</param>
-    /// <param name="password">password</param>
     /// <returns>A JSON Web Token that authenticates the user</returns>
-    /// <exception cref="AuthenticationException">If the authentication fails</exception>
-    public async Task<string> Login(string username, string password)
+    public async Task<string> Login(AuthenticationRequest request)
     {
-        var user = await _userManager.FindByNameAsync(username);
+        var user = await _userManager.FindByNameAsync(request.Username);
         if (user == null) throw new AuthenticationException("The username or password is incorrect.");
 
-        var result = await _userManager.CheckPasswordAsync(user, password);
+        var result = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!result) throw new AuthenticationException("The username or password is incorrect.");
         return GenerateToken(user);
     }
@@ -68,19 +65,19 @@ public class AuthenticationService : IAuthenticationService
     /// <param name="user">user</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public string GenerateToken(IdentityUser user)
+    public string GenerateToken(User user)
     {
         var expiration = DateTime.UtcNow.AddDays(ExpirationDay);
         if (user.UserName == null)
             throw new ArgumentException("Username is null");
-
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Iss, "chat"),
             new(JwtRegisteredClaimNames.Aud, "chat"),
             new(JwtRegisteredClaimNames.Sub, user.UserName),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture))
+            new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
+            new (ClaimTypes.Name, user.FirstName + ";" + user.LastName)
         };
 
         if (_secretKey == null)

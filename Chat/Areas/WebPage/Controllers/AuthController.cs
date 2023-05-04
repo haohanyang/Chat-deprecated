@@ -31,7 +31,7 @@ public class AuthController : Controller
         model.Error = null;
         try
         {
-            var token = await _authenticationService.Login(model.Username, model.Password);
+            var token = await _authenticationService.Login(new AuthenticationRequest { Username = model.Username, Password = model.Password });
             // Set cookie
             Response.Cookies.Append("chat_access_token", token, new CookieOptions()
             {
@@ -40,7 +40,7 @@ public class AuthController : Controller
                 SameSite = SameSiteMode.Strict
             });
 
-            TempData["loggedinUser"] = JsonSerializer.Serialize(new UserDTO { Username = model.Username });
+            TempData["loggedInUser"] = JsonSerializer.Serialize(new UserDTO { Username = model.Username });
             return RedirectToAction("Index", "Home");
         }
 
@@ -58,25 +58,14 @@ public class AuthController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Login()
+    public IActionResult Login()
     {
         var model = new LoginViewModel();
-        try
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (username != null)
         {
-            var token = Request.Cookies["chat_access_token"];
-            if (token != null)
-            {
-                var result = await _authenticationService.ValidateToken(token!);
-                if (result.IsValid && result.Claims.TryGetValue(ClaimTypes.NameIdentifier, out var username))
-                {
-                    model.LoggedInUser = new UserDTO { Username = (string)username };
-                    model.Error = "You are already logged in.";
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.LogError("Login error with unexpected error:{}", e.Message);
+            model.LoggedInUser = new UserDTO { Username = (string)username };
+            model.Error = "You are already logged in.";
         }
         return View(model);
     }
@@ -117,7 +106,15 @@ public class AuthController : Controller
 
         try
         {
-            var result = await _authenticationService.Register(model.Username, model.Email, model.Password);
+            var result = await _authenticationService.Register(
+                new AuthenticationRequest
+                {
+                    Username = model.Username,
+                    Email = model.Email,
+                    Password = model.Password,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName
+                });
             if (result.Succeeded)
             {
                 TempData["RedirectMessage"] = JsonSerializer.Serialize(new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "The account was successfully created." });

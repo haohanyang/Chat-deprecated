@@ -21,11 +21,15 @@ public class AuthenticationController : ControllerBase
         _logger = logger;
     }
 
-    [Authorize]
+
     [HttpGet]
     public string Index()
     {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)!;
+        var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (username == null)
+        {
+            return "You haven't logged in";
+        }
         return "Hello " + username;
     }
 
@@ -36,7 +40,7 @@ public class AuthenticationController : ControllerBase
             return BadRequest("Model state is invalid");
         try
         {
-            var result = await _authenticationService.Register(request.Username, request.Email, request.Password);
+            var result = await _authenticationService.Register(request);
 
             if (result.Succeeded)
             {
@@ -71,7 +75,7 @@ public class AuthenticationController : ControllerBase
             return BadRequest("Model state is invalid");
         try
         {
-            var token = await _authenticationService.Login(request.Username, request.Password);
+            var token = await _authenticationService.Login(request);
             return Ok(new AuthenticationResponse
             {
                 Success = true,

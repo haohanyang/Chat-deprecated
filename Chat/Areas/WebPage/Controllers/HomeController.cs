@@ -21,7 +21,7 @@ public class HomeController : Controller
         _authenticationService = authenticationService;
     }
 
-    public async Task<IActionResult> Index()
+    public IActionResult Index()
     {
         var model = new HomeViewModel();
 
@@ -32,31 +32,25 @@ public class HomeController : Controller
         }
 
         // If redirected from login
-        if (TempData["loggedinUser"] != null)
+        if (TempData["loggedInUser"] != null)
         {
-            model.LoggedInUser = JsonSerializer.Deserialize<UserDTO>((string)TempData["loggedinUser"]!);
+            model.LoggedInUser = JsonSerializer.Deserialize<UserDTO>((string)TempData["loggedInUser"]!);
         }
-
-        try
+        
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var name = User.FindFirstValue(ClaimTypes.Name);
+        if (username != null && name != null)
         {
-            var token = Request.Cookies["chat_access_token"];
-            if (token != null)
+            var names = name.Split(';');
+            model.LoggedInUser = new UserDTO
             {
-                var result = await _authenticationService.ValidateToken(token);
-
-                if (result.IsValid && result.Claims.TryGetValue(ClaimTypes.NameIdentifier, out var username))
-                {
-                    model.LoggedInUser = new UserDTO { Username = (string)username };
-                }
-
-            }
-            return View(model);
+                Username = username,
+                FirstName = names[0],
+                LastName = names[1]
+            };
         }
-        catch (Exception e)
-        {
-            _logger.LogError("Index with unexpected error: {}", e.Message);
-            return View(model);
-        }
+
+        return View(model);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
