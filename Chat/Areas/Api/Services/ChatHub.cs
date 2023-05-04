@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Chat.Areas.Api.Services;
 
-[Authorize]
+
 public class ChatHub : Hub<IChatClient>
 {
     private readonly IConnectionService _connectionService;
@@ -18,7 +18,7 @@ public class ChatHub : Hub<IChatClient>
         _userGroupService = userGroupService;
         _connectionService = connectionService;
     }
-    
+
     public override async Task OnConnectedAsync()
     {
         var username = Context.UserIdentifier!;
@@ -72,11 +72,11 @@ public class ChatHub : Hub<IChatClient>
     // Test only, assume sender is valid
     public async Task SendGroupMessage(string sender, string groupName, string content)
     {
-        var groups = await _userGroupService.GetJoinedGroups(sender); 
+        var groups = await _userGroupService.GetJoinedGroups(sender);
         if (!groups.Contains(groupName))
             throw new ArgumentException("You are not in the group " + groupName);
         await Clients.Group(groupName).ReceiveMessage(new MessageDTO
-            { Sender = sender, Receiver = groupName, Content = content });
+        { Sender = sender, Receiver = groupName, Content = content });
     }
 
     // Test only, assume sender and receivers are valid

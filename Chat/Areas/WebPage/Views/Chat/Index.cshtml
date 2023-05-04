@@ -14,9 +14,18 @@
 }
 
 <main class="container py-5 pt-3 pb-3">
-    <div id="chat">
-        <div class="spinner-border loading-progress" role="status">
-            <span class="visually-hidden">Loading...</span>
+    @if (Model.LoggedInUser != null)
+    {
+        <div id="chat">
+            <div class="spinner-border loading-progress" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="alert alert-danger" role="alert">
+            You haven't logged in
+        </div>
+    }
 </main>

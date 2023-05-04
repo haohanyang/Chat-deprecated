@@ -27,14 +27,36 @@ public class MessageController : ControllerBase
     }
 
     [HttpGet("all_messages")]
-    public async Task<IActionResult> GetAllMessages([FromQuery(Name = "username")] string username) {
-        try {
+    public async Task<IActionResult> GetAllMessages([FromQuery(Name = "username")] string username)
+    {
+        try
+        {
             var messages = await _messageService.GetAllMessages(username);
             return Ok(messages);
-        } catch (ArgumentException e) {
+        }
+        catch (ArgumentException e)
+        {
             return BadRequest(e.Message);
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             _logger.LogError("Failed to get all messages with unexpected error:{}" + e.Message);
+            return BadRequest("Unexpected error");
+        }
+    }
+
+    [HttpPost("send_test")]
+    public async Task<ActionResult> SendTestMessage([FromQuery(Name = "username")] string username)
+    {
+        try
+        {
+            var message = new MessageDTO { Content = "test" };
+            await _hubContext.Clients.User(username).ReceiveMessage(message);
+            return Ok("ok");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("SendTestMessage failed with unexpected error : {}", e.Message);
             return BadRequest("Unexpected error");
         }
     }
@@ -53,7 +75,7 @@ public class MessageController : ControllerBase
             {
                 var groupName = message.Receiver;
                 var members = await _userGroupService.GetGroupMembers(groupName);
-                
+
                 // Check if the sender is in the group
                 if (!members.Contains(username))
                     return BadRequest("You are not in the group " + message.Receiver);
@@ -72,10 +94,13 @@ public class MessageController : ControllerBase
             }
 
             var messageId = await _messageService.SaveMessage(message);
-            if (message.Type == MessageType.UserMessage) {
+            if (message.Type == MessageType.UserMessage)
+            {
                 _logger.LogInformation("User {} sent a message to user {}, message id ", username, message.Content,
                     message.Receiver, messageId);
-            } else {
+            }
+            else
+            {
                 _logger.LogInformation("User {} sent a message to group {}, message id ", username, message.Content,
                     message.Receiver, messageId);
             }
@@ -84,7 +109,7 @@ public class MessageController : ControllerBase
         catch (ArgumentException e)
         {
             return BadRequest(e.Message);
-        } 
+        }
         catch (Exception e)
         {
             _logger.LogError("Failed to send message with the unexpected error error: {}", e.Message);

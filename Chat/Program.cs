@@ -49,7 +49,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
-builder.Services.AddScoped<IConnectionService, ConnectionService>();
+builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IUserGroupService, UserGroupService>();
 
 builder.Services.AddAuthentication(options =>
