@@ -25,6 +25,7 @@ public class AuthController : Controller
 
         if (!ModelState.IsValid)
         {
+            // TODO: 
             return View(model);
         }
 
@@ -100,7 +101,6 @@ public class AuthController : Controller
     {
         if (!ModelState.IsValid)
         {
-            _logger.LogInformation("Model is invalid");
             return View(model);
         }
 
@@ -122,6 +122,11 @@ public class AuthController : Controller
             }
             var errors = result.Errors.Select(e => e.Description).ToList();
             model.Errors = errors;
+            return View(model);
+        }
+        catch (ArgumentException e)
+        {
+            model.Errors = new List<string> { e.Message };
             return View(model);
         }
         catch (Exception e)

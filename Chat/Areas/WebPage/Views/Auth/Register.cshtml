@@ -8,6 +8,19 @@
     @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { LoggedInUser = Model.LoggedInUser })
 }
 
+@section Scripts {
+    <script>
+        $("document").ready(function () {
+            let fields = ["first-name", "last-name", "email", "username", "password"];
+            fields.forEach((field) => {
+                if ($("#register-" + field + "-input-feedback").text().trim() != "") {
+                    $("#register-" + field + "-input").addClass("is-invalid");
+                }
+            });
+        })
+    </script>
+}
+
 <main role="main" class="container">
     <form asp-area="WebPage" asp-controller="Auth" asp-action="Register" method="post"
         class="form-signin border rounded">
@@ -20,43 +33,43 @@
 
         <div class="container row justify-content-between">
             <div class="col-12 col-sm-6">
-                <label asp-for="FirstName" for="register-first-name" class="form-label">First name</label>
-                <input type="text" class="form-control" id="register-first-name"
-                    aria-describedby="register-first-name-feedback" required>
-                <span asp-validation-for="FirstName" id="register-first-name-feedback" class="invalid-feedback">
+                <label for="register-first-name-input" class="form-label">First name</label>
+                <input asp-for="FirstName" type="text" class="form-control" id="register-first-name-input"
+                    aria-describedby="register-first-name-input-feedback" required>
+                <span asp-validation-for="FirstName" id="register-first-name-input-feedback" class="invalid-feedback">
                 </span>
             </div>
 
             <div class="col-12 col-sm-6 pr-0">
-                <label for="register-last-name" class="form-label">Last name</label>
-                <input asp-for="LastName" type="text" class="form-control" id="register-last-name"
-                    aria-describedby="register-last-name-feedback" required>
-                <span asp-validation-for="LastName" id="register-last-name-feedback" class="invalid-feedback">
+                <label for="register-last-name-input" class="form-label">Last name</label>
+                <input asp-for="LastName" type="text" class="form-control" id="register-last-name-input"
+                    aria-describedby="register-last-name-input-feedback" required>
+                <span asp-validation-for="LastName" id="register-last-name-input-feedback" class="invalid-feedback">
                 </span>
             </div>
         </div>
 
         <div class="container">
-            <label for="register-email" class="form-label">Email</label>
-            <input asp-for="Email" type="email" class="form-control" id="register-email"
-                aria-describedby="register-email-feedback" required>
-            <span asp-validation-for="Email" id="register-email-feedback" class="invalid-feedback">
+            <label for="register-email-input" class="form-label">Email</label>
+            <input asp-for="Email" type="email" class="form-control" id="register-email-input"
+                aria-describedby="register-email-input-feedback" required>
+            <span asp-validation-for="Email" id="register-email-input-feedback" class="invalid-feedback">
             </span>
         </div>
 
         <div class="container">
-            <label for="register-username" class="form-label">Username</label>
-            <input asp-for="Username" type="text" class="form-control" id="register-username"
-                aria-describedby="register-username-feedback" required>
-            <span asp-validation-for="Username" id="register-username-feedback" class="invalid-feedback">
+            <label for="register-username-input" class="form-label">Username</label>
+            <input asp-for="Username" type="text" class="form-control" id="register-username-input"
+                aria-describedby="register-username-input-feedback" required>
+            <span asp-validation-for="Username" id="register-username-input-feedback" class="invalid-feedback">
             </span>
         </div>
 
         <div class="container">
-            <label for="register-password" class="form-label">Password</label>
-            <input asp-for="Password" type="password" class="form-control" id="register-password"
-                aria-describedby="register-password-feedback" required>
-            <span asp-validation-for="Password" id="register-password-feedback" class="invalid-feedback">
+            <label for="register-password-input" class="form-label">Password</label>
+            <input asp-for="Password" type="password" class="form-control" id="register-password-input"
+                aria-describedby="register-password-input-feedback" required>
+            <span asp-validation-for="Password" id="register-password-input-feedback" class="invalid-feedback">
             </span>
         </div>
 

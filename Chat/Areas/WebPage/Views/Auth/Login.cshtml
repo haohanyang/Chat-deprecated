@@ -8,6 +8,17 @@
     @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { LoggedInUser = Model.LoggedInUser })
 }
 
+@section Scripts {
+    <script>
+        let fields = ["username", "password"];
+        fields.forEach((field) => {
+            if ($("#login-" + field + "-input-feedback").text().trim() != "") {
+                $("#login-" + field + "-input").addClass("is-invalid");
+            }
+        });
+    </script>
+}
+
 <main role="main" class="container">
 
     @if (Model.LoggedInUser != null)
@@ -27,18 +38,18 @@
             <h1 class="h3 mb-3 font-weight-normal text-center">Please sign in</h1>
 
             <div class="container">
-                <label for="login-username" class="form-label">Username</label>
-                <input asp-for="Username" type="text" class="form-control" id="login-username"
+                <label for="login-username-input" class="form-label">Username</label>
+                <input asp-for="Username" type="text" class="form-control" id="login-username-input"
                     aria-describedby="login-username-feedback" required>
-                <span asp-validation-for="Username" id="login-username-feedback" class="invalid-feedback">
+                <span asp-validation-for="Username" id="login-username-input-feedback" class="invalid-feedback">
                 </span>
             </div>
 
             <div class="container">
-                <label for="login-password" class="form-label">Password</label>
-                <input asp-for="Password" type="password" class="form-control" id="login-password"
-                    aria-describedby="login-password-feedback" required>
-                <span asp-validation-for="Password" id="login-password-feedback" class="invalid-feedback">
+                <label for="login-password-input" class="form-label">Password</label>
+                <input asp-for="Password" type="password" class="form-control" id="login-password-input"
+                    aria-describedby="login-password-input-feedback" required>
+                <span asp-validation-for="Password" id="login-password-input-feedback" class="invalid-feedback">
                 </span>
             </div>
 
