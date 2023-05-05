@@ -27,7 +27,7 @@ public class MessageController : ControllerBase
     }
 
     [HttpGet("all_messages")]
-    public async Task<IActionResult> GetAllMessages([FromQuery(Name = "username")] string username)
+    public async Task<IActionResult> AllMessages([FromQuery(Name = "username")] string username)
     {
         try
         {
@@ -41,6 +41,27 @@ public class MessageController : ControllerBase
         catch (Exception e)
         {
             _logger.LogError("Failed to get all messages with unexpected error:{}" + e.Message);
+            return BadRequest("Unexpected error");
+        }
+    }
+
+    [Authorize]
+    [HttpGet("all_messages_with_user")]
+    public async Task<IActionResult> MessagesBetween([FromQuery(Name = "username")] string contact)
+    {
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        try
+        {
+            var messages = await _messageService.GetAllMessagesBetween(username, contact);
+            return Ok(messages);
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("MessagesBetween failed with unexpected error:{}" + e.Message);
             return BadRequest("Unexpected error");
         }
     }
@@ -68,7 +89,6 @@ public class MessageController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest("Model is invalid");
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         try
         {
             if (message.Type == MessageType.GroupMessage)

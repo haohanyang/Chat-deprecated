@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Chat.Areas.Api.Services;
 
-
+[Authorize]
 public class ChatHub : Hub<IChatClient>
 {
     private readonly IConnectionService _connectionService;

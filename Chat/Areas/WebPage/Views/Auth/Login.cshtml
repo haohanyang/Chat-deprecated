@@ -10,12 +10,19 @@
 
 @section Scripts {
     <script>
-        let fields = ["username", "password"];
-        fields.forEach((field) => {
-            if ($("#login-" + field + "-input-feedback").text().trim() != "") {
-                $("#login-" + field + "-input").addClass("is-invalid");
-            }
-        });
+        $("document").ready(function () {
+            let fields = ["username", "password"];
+            fields.forEach((field) => {
+                if ($("#login-" + field + "-input-feedback").text().trim() != "") {
+                    $("#login-" + field + "-input").addClass("is-invalid");
+                }
+            });
+        @* $(".login-button").on("click", function (e) {
+            e.preventDefault();
+            $(this).prop('disabled', true);
+            }); *@
+            })
+
     </script>
 }
 
@@ -60,7 +67,7 @@
             </div>
 
             <div class="container text-center pt-2 pb-2">
-                <input type="submit" class="btn btn-outline-primary" value="Log in" />
+                <input type="submit" class="btn btn-outline-primary login-button" value="Log in" />
             </div>
 
             @if (Model.Error != null)

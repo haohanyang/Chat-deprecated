@@ -17,7 +17,11 @@
                     $("#register-" + field + "-input").addClass("is-invalid");
                 }
             });
-        })
+        @* $(".register-button").on("click", function (e) {
+            e.preventDefault();
+            $(this).prop('disabled', true);
+            }); *@
+            })
     </script>
 }
 
@@ -78,7 +82,7 @@
         </div>
 
         <div class="container text-center pt-2 pb-2">
-            <input type="submit" class="btn btn-outline-primary" value="Register" />
+            <input type="submit" class="btn btn-outline-primary register-button" value="Register" />
         </div>
 
         @if (Model.Errors.Count > 0)

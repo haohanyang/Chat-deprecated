@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Chat.Areas.Api.Data;
 using Chat.Areas.Api.Models;
+using Chat.Common.DTOs;
 
 namespace Chat.Areas.Api.Services;
 
@@ -54,11 +55,11 @@ public class UserGroupService : IUserGroupService
 
     public async Task LeaveGroup(string username, string groupName)
     {
-        
+
         var user = await _dbContext.Users.Include(e => e.Memberships).FirstOrDefaultAsync(e => e.UserName == username);
         var group = await _dbContext.Groups.Include(e => e.Memberships)
             .FirstOrDefaultAsync(e => e.GroupName == groupName);
-        
+
         if (user == null)
             throw new ArgumentException("User " + username + " doesn't exist");
 
@@ -68,7 +69,7 @@ public class UserGroupService : IUserGroupService
         if (!UserInGroup(user, group))
             throw new ArgumentException("User " + username + " is not in group " + groupName);
 
-        var membership =  await _dbContext.Memberships.FirstOrDefaultAsync(e => e.UserId == user.Id && e.GroupId == group.Id);
+        var membership = await _dbContext.Memberships.FirstOrDefaultAsync(e => e.UserId == user.Id && e.GroupId == group.Id);
         _dbContext.Remove(membership!);
         await _dbContext.SaveChangesAsync();
     }
@@ -105,7 +106,7 @@ public class UserGroupService : IUserGroupService
 
     public async Task<bool> UserExists(string username)
     {
-        var user = await  _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
+        var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
         return user != null;
     }
 
@@ -113,5 +114,11 @@ public class UserGroupService : IUserGroupService
     {
         var group = await _dbContext.Groups.FirstOrDefaultAsync(e => e.GroupName == groupName);
         return group != null;
+    }
+
+    public async Task<IEnumerable<UserDTO>> GetAllUsers()
+    {
+        var users = await _dbContext.Users.ToListAsync();
+        return users.Select(u => new UserDTO { Username = u.UserName!, FirstName = u.FirstName, LastName = u.LastName });
     }
 }
