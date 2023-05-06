@@ -15,15 +15,17 @@ public class MessageController : ControllerBase
     private readonly IHubContext<ChatHub, IChatClient> _hubContext;
     private readonly ILogger<MessageController> _logger;
     private readonly IMessageService _messageService;
-    private readonly IUserGroupService _userGroupService;
+    private readonly IGroupService _groupService;
+    private readonly IUserService _userService;
 
     public MessageController(IHubContext<ChatHub, IChatClient> hubContext,
-        ILogger<MessageController> logger, IUserGroupService userGroupService, IMessageService messageService)
+        ILogger<MessageController> logger, IGroupService groupService, IUserService userService, IMessageService messageService)
     {
         _hubContext = hubContext;
         _logger = logger;
-        _userGroupService = userGroupService;
+        _groupService = groupService;
         _messageService = messageService;
+        _userService = userService;
     }
 
     [HttpGet("all_messages")]
@@ -94,7 +96,7 @@ public class MessageController : ControllerBase
             if (message.Type == MessageType.GroupMessage)
             {
                 var groupName = message.Receiver;
-                var members = await _userGroupService.GetGroupMembers(groupName);
+                var members = await _groupService.GetGroupMembers(groupName);
 
                 // Check if the sender is in the group
                 if (!members.Contains(username))
@@ -106,7 +108,7 @@ public class MessageController : ControllerBase
             else
             {
                 var receiver = message.Receiver;
-                if (!await _userGroupService.UserExists(receiver))
+                if (!await _userService.UserExists(receiver))
                 {
                     throw new ArgumentException("User " + receiver + " doesn't exist");
                 }

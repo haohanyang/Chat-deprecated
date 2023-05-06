@@ -5,14 +5,14 @@ using Chat.Common.DTOs;
 
 namespace Chat.Areas.Api.Services;
 
-public class UserGroupService : IUserGroupService
+public class GroupService : IGroupService
 {
     private readonly ApplicationDbContext _dbContext;
 
-    private readonly ILogger<UserGroupService> _logger;
+    private readonly ILogger<GroupService> _logger;
 
 
-    public UserGroupService(ApplicationDbContext dbContext, ILogger<UserGroupService> logger)
+    public GroupService(ApplicationDbContext dbContext, ILogger<GroupService> logger)
     {
         _dbContext = dbContext;
         _logger = logger;
@@ -104,11 +104,6 @@ public class UserGroupService : IUserGroupService
             select membership.Id).Any();
     }
 
-    public async Task<bool> UserExists(string username)
-    {
-        var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
-        return user != null;
-    }
 
     public async Task<bool> GroupExists(string groupName)
     {
@@ -116,9 +111,4 @@ public class UserGroupService : IUserGroupService
         return group != null;
     }
 
-    public async Task<IEnumerable<UserDTO>> GetAllUsers()
-    {
-        var users = await _dbContext.Users.ToListAsync();
-        return users.Select(u => new UserDTO { Username = u.UserName!, FirstName = u.FirstName, LastName = u.LastName });
-    }
 }

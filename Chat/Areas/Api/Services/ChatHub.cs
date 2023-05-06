@@ -10,12 +10,14 @@ public class ChatHub : Hub<IChatClient>
 {
     private readonly IConnectionService _connectionService;
     private readonly ILogger<ChatHub> _logger;
-    private readonly IUserGroupService _userGroupService;
+    private readonly IUserService _userService;
+    private readonly IGroupService _groupService;
 
-    public ChatHub(ILogger<ChatHub> logger, IUserGroupService userGroupService, IConnectionService connectionService)
+    public ChatHub(ILogger<ChatHub> logger, IUserService userService, IGroupService groupService, IConnectionService connectionService)
     {
         _logger = logger;
-        _userGroupService = userGroupService;
+        _userService = userService;
+        _groupService = groupService;
         _connectionService = connectionService;
     }
 
@@ -32,7 +34,7 @@ public class ChatHub : Hub<IChatClient>
         try
         {
             // Add user to group communications
-            var groups = await _userGroupService.GetJoinedGroups(username);
+            var groups = await _groupService.GetJoinedGroups(username);
             await Task.WhenAll(groups.Select(groupName =>
                 Groups.AddToGroupAsync(connectionId, groupName)));
         }
@@ -56,7 +58,7 @@ public class ChatHub : Hub<IChatClient>
         try
         {
             // Remove user from connections to groups
-            var groups = await _userGroupService.GetJoinedGroups(username);
+            var groups = await _groupService.GetJoinedGroups(username);
             await Task.WhenAll(groups.Select(groupName =>
                 Groups.RemoveFromGroupAsync(connectionId, groupName)));
         }
@@ -72,7 +74,7 @@ public class ChatHub : Hub<IChatClient>
     // Test only, assume sender is valid
     public async Task SendGroupMessage(string sender, string groupName, string content)
     {
-        var groups = await _userGroupService.GetJoinedGroups(sender);
+        var groups = await _groupService.GetJoinedGroups(sender);
         if (!groups.Contains(groupName))
             throw new ArgumentException("You are not in the group " + groupName);
         await Clients.Group(groupName).ReceiveMessage(new MessageDTO
