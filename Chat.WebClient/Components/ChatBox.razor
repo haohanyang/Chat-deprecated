@@ -1,41 +1,167 @@
-<div class="col-md-6 col-lg-7 col-xl-8 chat-right">
-    <ContactStatus Name="@CurrentContactName" />
-    <div class="border rounded p-2 chat-message-box">
-        <Message />
-        <Message />
-        <Message />
-        <Message />
-        <Message />
-        <Message />
-        <Message />
-        <Message />
+@using Chat.Common.DTOs;
 
-        <Message />
-        <Message />
-        <Message />
-        <Message />
+<div class="col-md-6 col-lg-7 col-xl-8 chat-right">
+    <ContactStatus CurrentContact=@CurrentContact />
+    <div class="border rounded p-2 chat-message-box">
+        @if (_loading)
+        {
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        }
+        else
+        {
+            @if (_error != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    @_error
+                </div>
+            }
+            else if (Messages == null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    Message is null
+                </div>
+            }
+            else
+            {
+                <MessageList Messages=@Messages />
+            }
+        }
     </div>
 
     <div class="text-muted d-flex justify-content-between align-items-center pe-3 pt-3 mt-2">
 
         <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava6-bg.webp" alt="avatar 3"
             style="width: 40px; height: 100%;">
-   
+
         <div class="form-outline ml-2 flex-fill">
-            <input type="text" class="form-control form-control-lg" id="message-input">
+            <input type="text" class="form-control form-control" id="message-input" @bind="_input">
         </div>
         <div>
-            <button class="ms-1 text-muted btn m-0 p-0" href="#!"><i class="fas fa-paperclip"></i></button>
-            <button class="ms-3 text-muted btn m-0 p-0" href="#!"><i class="fas fa-smile"></i></button>
-            <button class="ms-3 btn  m-0 p-0" href="#!"><i class="fas fa-paper-plane"></i></button>
+            <button class="ms-1 text-muted btn m-0 p-0" href="#!"><i class="bi bi-paperclip"></i></button>
+            <button class="ms-3 text-muted btn m-0 p-0" href="#!"><i class="bi bi-emoji-smile"></i></button>
 
+            @if (_sending)
+            {
+                <button class="ms-3 btn m-0 p-0 disabled" @onclick="SendMessage"><i class="bi bi-send"></i></button>
+            }
+            else
+            {
+                <button class="ms-3 btn m-0 p-0" @onclick="SendMessage"><i class="bi bi-send"></i></button>
+            }
         </div>
     </div>
 
 </div>
 
 @code {
+    [Parameter]
+    public UserDTO CurrentContact { get; set; } = new();
+
+    [Parameter]
+    public List<MessageDTO>? Messages { get; set; }
+
+    [Parameter]
+    public EventCallback<MessageDTO> OnSendMessage { get; set; }
+
+
+    [Parameter]
+    public EventCallback<List<MessageDTO>> OnFetchMessage { get; set; }
 
     [CascadingParameter]
-    public string? CurrentContactName { get; set; }
+    public UserDTO CurrentUser { get; set; } = new();
+
+
+
+    private bool _loading = false;
+    private bool _sending = false;
+    private string? _error;
+    private string _input = string.Empty;
+
+
+    private void SetError(string error)
+    {
+        _error = error;
+        _loading = false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+
+        // Fetch messages from the server
+        try
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetAsync(new Uri("http://localhost:5001/api/message/between?user=" +
+            CurrentContact.Username));
+
+            if (response.IsSuccessStatusCode)
+            {
+                var messages = (await response.Content.ReadFromJsonAsync<IEnumerable<MessageDTO>>())?.ToList();
+                if (messages == null)
+                {
+                    SetError("Failed to retrieve messages");
+                    return;
+                }
+                await OnFetchMessage.InvokeAsync(messages);
+            }
+            else
+            {
+                _error = response.ReasonPhrase;
+            }
+        }
+        catch (Exception e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (_input == null)
+        {
+            Console.WriteLine("Input is null");
+            return;
+        }
+
+        var message = new MessageDTO
+            {
+                Content = _input,
+                Sender = CurrentUser.Username,
+                Receiver = CurrentContact.Username,
+                Time = DateTime.Now
+            };
+        try
+        {
+            _sending = true;
+            using var httpClient = new HttpClient();
+            var response = await httpClient.PostAsJsonAsync(new Uri("http://localhost:5001/api/message/send"), message);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await OnSendMessage.InvokeAsync(message);
+            }
+            else
+            {
+                _error = response.ReasonPhrase;
+            }
+        }
+        catch (Exception e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _sending = false;
+            _input = "";
+        }
+    }
+
+
 }

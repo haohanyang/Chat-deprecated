@@ -2,7 +2,9 @@ using Chat.Common;
 using Chat.Areas.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Authorization;
 using Chat.Common.DTOs;
+using System.Security.Claims;
 
 namespace Chat.Areas.Api.Controllers;
 
@@ -20,6 +22,28 @@ public class UserController : ControllerBase
         _logger = logger;
     }
 
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> CurrentUser()
+    {
+        try
+        {
+            var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var user = await _userService.GetUser(username);
+            return Ok(user);
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest("Invalid user");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Failed to get current user with unexpected error:{}" + e.Message);
+            return BadRequest("Unexpected error");
+        }
+    }
+
+    [Authorize]
     [HttpGet("all")]
     public async IAsyncEnumerable<UserDTO> AllUsers()
     {
@@ -29,5 +53,7 @@ public class UserController : ControllerBase
             yield return user;
         }
     }
+
+
 
 }

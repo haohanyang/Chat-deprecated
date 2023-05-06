@@ -33,7 +33,7 @@ public class AuthenticationController : ControllerBase
         return "Hello " + username;
     }
 
-    [HttpPost("register", Name = "Register")]
+    [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] AuthenticationRequest request)
     {
         if (!ModelState.IsValid)
@@ -68,7 +68,7 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    [HttpPost("login", Name = "Login")]
+    [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] AuthenticationRequest request)
     {
         if (!ModelState.IsValid)
@@ -94,7 +94,7 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    [HttpGet("validate", Name = "Validate")]
+    [HttpGet("validate")]
     public async Task<IActionResult> Validate([FromQuery(Name = "token")] string token)
     {
         if (!ModelState.IsValid)

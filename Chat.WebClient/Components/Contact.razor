@@ -1,46 +1,47 @@
-<li style="cursor:pointer" class="p-2 border-bottom" @onclick="Gs">
-    <a class="d-flex justify-content-between">
+@using Chat.Common.DTOs;
+
+
+<li style="cursor:pointer" class="p-2 border-bottom" @onclick="OnClick">
+    <a class="d-flex justify-content-between text-decoration-none">
         <div class="d-flex flex-row">
             <div>
                 <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp" alt="avatar"
                     class="d-flex align-self-center me-3" width="60">
             </div>
             <div class="pt-1">
-                <p class="fw-bold mb-0">@ContactName</p>
-                <p class="small text-muted">@LatestMessage
-                </p>
+                <p class="fw-bold mb-0">@User.FirstName @User.LastName</p>
+                <p class="small text-muted"> @LastMessage?.Content</p>
             </div>
         </div>
         <div class="pt-1">
-            <p class="small text-muted mb-1">@LatestMessageTime</p>
-            <span class="badge bg-danger rounded-pill float-end">@UnreadMessageCounts</span>
+            <p class="small text-muted mb-1">
+                @LastMessage?.Time
+            </p>
+            @if (UnreadMessageCounts > 0)
+            {
+                <span class="badge bg-danger rounded-pill float-end">@UnreadMessageCounts</span>
+            }
         </div>
     </a>
 </li>
 
+
 @code {
     [Parameter]
-    public string ContactName { get; set; } = "User";
+    public UserDTO User { get; set; } = new();
 
     [Parameter]
-    public string ContactUsername { get; set; } = "user";
+    public MessageDTO? LastMessage { get; set; }
 
     [Parameter]
-    public string LatestMessage { get; set; } = "hello";
+    public int UnreadMessageCounts { get; set; } = 0;
 
     [Parameter]
-    public string LatestMessageTime { get; set; } = "now";
-
-    [Parameter]
-    public int UnreadMessageCounts { get; set; } = 1;
-
-    [Parameter]
-    public EventCallback<string> OnClickCallback { get; set; }
+    public EventCallback<UserDTO> OnClickCallback { get; set; }
 
 
-    private void Gs()
+    private void OnClick()
     {
-        Console.WriteLine("s");
-        OnClickCallback.InvokeAsync(ContactName);
+        OnClickCallback.InvokeAsync(User);
     }
 }

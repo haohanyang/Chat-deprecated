@@ -28,7 +28,7 @@ public class MessageController : ControllerBase
         _userService = userService;
     }
 
-    [HttpGet("all_messages")]
+    [HttpGet("all")]
     public async Task<IActionResult> AllMessages([FromQuery(Name = "username")] string username)
     {
         try
@@ -48,8 +48,8 @@ public class MessageController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("all_messages_with_user")]
-    public async Task<IActionResult> MessagesBetween([FromQuery(Name = "username")] string contact)
+    [HttpGet("between")]
+    public async Task<IActionResult> MessagesBetween([FromQuery(Name = "user")] string contact)
     {
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         try

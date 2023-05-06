@@ -19,9 +19,22 @@ public class UserService : IUserService
         return users.Select(u => new UserDTO { Username = u.UserName!, FirstName = u.FirstName, LastName = u.LastName });
     }
 
+
     public async Task<bool> UserExists(string username)
     {
         var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
         return user != null;
+
     }
+
+    public async Task<UserDTO> GetUser(string username)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
+        if (user == null)
+        {
+            throw new ArgumentException("User does not exist");
+        }
+        return (new UserDTO { Username = user.UserName!, FirstName = user.FirstName, LastName = user.LastName });
+    }
+
 }

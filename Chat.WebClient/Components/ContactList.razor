@@ -1,0 +1,21 @@
+@using Chat.Common.DTOs;
+
+<div class="col-md-6 col-lg-5 col-xl-4 chat-left">
+    <ContactSearchBar />
+    <div class="border rounded chat-contact-list">
+        <ul class="list-unstyled mb-0">
+            @foreach (var contact in Contacts)
+            {
+                <Contact User=@contact OnClickCallback=@OnClickContactCallback />
+            }
+        </ul>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<UserDTO> OnClickContactCallback { get; set; }
+
+    [Parameter]
+    public IEnumerable<UserDTO> Contacts { get; set; } = Enumerable.Empty<UserDTO>();
+}

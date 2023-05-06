@@ -1,32 +1,145 @@
 ﻿@using Chat.WebClient.Components;
-
+@using Chat.Common.DTOs;
+@using Microsoft.AspNetCore.SignalR.Client;
+@using System.Collections.Generic;
 
 <div class="row">
-    <div class="col-md-12">
-        <div class="card" id="chat3" style="border-radius: 15px;">
-            <div class="card-body">
-                <div class="row pt-2">
-                    <Contacts OnClickCallback=@ChangeCurrentContact />
-                    @if (CurrentContactName != null)
-                    {
-                        <CascadingValue Value="@CurrentContactName">
-                            <ChatBox />
-                        </CascadingValue>
-                    }
+    @if (_loading)
+    {
+        <div class="spinner-border" role="status">
+        </div>
+    }
+    else
+    {
+        @if (_error == null)
+        {
+            <div class="col-md-12">
+                <div class="card" id="chat3" style="border-radius: 15px;">
+                    <div class="card-body">
+                        <div class="row pt-2">
+                            <ContactList Contacts=@_contacts OnClickContactCallback=@SetCurrentContact />
+                            @if (_currentContact != null)
+                            {
+                                <CascadingValue Value=@_currentUser>
+                                    <ChatBox CurrentContact=@_currentContact OnFetchMessage=@SetMessages
+                                        OnSendMessage=@AddMessage Messages=@_messages/>
+                                </CascadingValue>
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-    </div>
+        }
+        else
+        {
+            <div class="alert alert-danger" role="alert">
+                @_error
+            </div>
+        }
+    }
 </div>
 
 @code {
+    private HubConnection? _hubConnection;
+    private string? _userInput;
+    private string? _error;
+    private bool _loading = false;
+    private string _serverUrl = "http://localhost:5001";
+    private string? _username;
+    private IEnumerable<UserDTO>? _contacts;
+    private List<MessageDTO>? _messages;
+    private UserDTO? _currentUser;
 
-    public string? CurrentContactName { get; set; }
-    public string InputMessage { get; set; } = "";
-
-    public void ChangeCurrentContact(string newContactName)
+    protected override async Task OnInitializedAsync()
     {
-        CurrentContactName = newContactName;
+        _loading = true;
+        try
+        {
+            using var httpClient = new HttpClient();
+
+            var result = await httpClient.GetAsync(_serverUrl + "/api/user/me");
+            if (result.IsSuccessStatusCode)
+            {
+                _currentUser = await result.Content.ReadFromJsonAsync<UserDTO>();
+                if (_currentUser == null)
+                {
+                    SetError("Failed to deserialize user");
+                    return;
+                }
+            }
+            else
+            {
+                SetError(result.ReasonPhrase);
+                return;
+            }
+
+            // Connect to SignalR hub
+            _hubConnection = new HubConnectionBuilder()
+            .WithUrl(_serverUrl + "/chat_hub").Build();
+
+            _hubConnection.On<MessageDTO>("ReceiveMessage", message =>
+            {
+                Console.WriteLine("ReceiveMessage");
+                AddMessage(message);
+                this.StateHasChanged();
+            });
+
+            await _hubConnection.StartAsync();
+
+            // Get all contacts
+            result = await httpClient.GetAsync(_serverUrl + "/api/user/all");
+
+            if (result.IsSuccessStatusCode)
+            {
+                var contacts = await result.Content.ReadFromJsonAsync<IEnumerable<UserDTO>>();
+                if (contacts == null)
+                {
+                    SetError("Failed to deserialize contacts");
+                    return;
+                }
+                _contacts = contacts.Where(c => c.Username != _currentUser.Username);
+            }
+            else
+            {
+                _error = result.ReasonPhrase;
+            }
+        }
+        catch (Exception e)
+        {
+            _error = e.Message;
+
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+    }
+    private UserDTO? _currentContact { get; set; }
+
+    private void SetCurrentContact(UserDTO contact)
+    {
+        _currentContact = contact;
+    }
+
+    private void SetMessages(List<MessageDTO> messages)
+    {
+        Console.WriteLine("SetMessages");
+        _messages = messages;
+    }
+
+    private void AddMessage(MessageDTO message)
+    {
+        _messages?.Add(message);
+    }
+
+    private void SetError(string? error)
+    {
+        if (error == null)
+        {
+            _error = "Unknown error";
+        }
+        _error = error;
+        _loading = false;
     }
 }
