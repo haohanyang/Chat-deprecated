@@ -60,6 +60,8 @@
     [Parameter]
     public UserDTO CurrentContact { get; set; } = new();
 
+    private UserDTO _currentUser = new();
+
     [Parameter]
     public List<MessageDTO>? Messages { get; set; }
 
@@ -87,7 +89,6 @@
     protected override async Task OnInitializedAsync()
     {
         _loading = true;
-
         // Fetch messages from the server
         try
         {
@@ -102,6 +103,31 @@
         {
             _loading = false;
         }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // If the current contact is changed, fetch new messages
+        if (CurrentContact.Username != _currentUser.Username)
+        {
+            _loading = true;
+            try
+            {
+                var messages = await Fetcher.GetMessages(CurrentContact.Username);
+                await OnFetchMessage.InvokeAsync(messages);
+            }
+            catch (Exception e)
+            {
+                _error = e.Message;
+                await OnFetchMessage.InvokeAsync(null);
+            }
+            finally
+            {
+                _loading = false;
+                _currentUser = CurrentContact;
+            }
+        }
+
     }
 
     private async Task SendMessage()
