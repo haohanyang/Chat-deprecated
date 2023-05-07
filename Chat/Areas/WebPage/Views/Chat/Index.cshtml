@@ -11,6 +11,21 @@
 
 @section Scripts {
     <script src="_framework/blazor.webassembly.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
+    <script>
+        const popoverTriggerList = document.querySelectorAll('#gg')
+        const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+
+        const pickerOptions = { onEmojiSelect: console.log }
+        const picker = new EmojiMart.Picker(pickerOptions)
+
+        window.AddEmojiPopover = (element) => {
+            const popover = new bootstrap.Popover(element, {
+                html: true,
+                content: picker
+            })
+        }
+    </script>
 }
 
 <main class="container py-5 pt-3 pb-3">

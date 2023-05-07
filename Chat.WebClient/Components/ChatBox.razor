@@ -1,5 +1,6 @@
-@using Chat.WebClient.Utils;
-@using Chat.Common.DTOs;
+@using Chat.WebClient.Utils
+@using Chat.Common.DTOs
+@inject IJSRuntime JS
 
 <div class="col-md-6 col-lg-7 col-xl-8 chat-right">
     <ContactStatus CurrentContact=@CurrentContact />
@@ -40,16 +41,17 @@
             <input type="text" class="form-control form-control" id="message-input" @bind="_input">
         </div>
         <div>
-            <button class="ms-1 text-muted btn m-0 p-0" href="#!"><i class="bi bi-paperclip"></i></button>
-            <button class="ms-3 text-muted btn m-0 p-0" href="#!"><i class="bi bi-emoji-smile"></i></button>
+            <button class="ms-1 text-muted btn m-0 p-0 file-button" href="#!"><i class="bi bi-paperclip"></i></button>
+            <button class="ms-3 text-muted btn m-0 p-0 emoji-button" href="#!"><i
+                    class="bi bi-emoji-smile"></i></button>
 
             @if (_sending)
             {
-                <button class="ms-3 btn m-0 p-0 disabled" @onclick="SendMessage"><i class="bi bi-send"></i></button>
+                <button class="ms-3 btn m-0 p-0 disabled send-btn" @onclick=@SendMessage><i class="bi bi-send"></i></button>
             }
             else
             {
-                <button class="ms-3 btn m-0 p-0" @onclick="SendMessage"><i class="bi bi-send"></i></button>
+                <button class="ms-3 btn m-0 p-0 send-button" @onclick=@SendMessage><i class="bi bi-send"></i></button>
             }
         </div>
     </div>
@@ -84,6 +86,15 @@
     {
         _error = error;
         _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+     // Add popover
+    await JS.InvokeVoidAsync("AddEmojiPopover", ".emoji-button");
+        }
     }
 
     protected override async Task OnInitializedAsync()
