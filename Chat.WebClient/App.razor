@@ -1,4 +1,5 @@
 ﻿@using Chat.WebClient.Components;
+@using Chat.WebClient.Utils;
 @using Chat.Common.DTOs;
 @using Microsoft.AspNetCore.SignalR.Client;
 @using System.Collections.Generic;
@@ -44,8 +45,6 @@
     private string? _userInput;
     private string? _error;
     private bool _loading = false;
-    private string _serverUrl = "http://localhost:5001";
-    private string? _username;
     private IEnumerable<UserDTO>? _contacts;
     private List<MessageDTO>? _messages;
     private UserDTO? _currentUser;
@@ -55,27 +54,12 @@
         _loading = true;
         try
         {
-            using var httpClient = new HttpClient();
+            /// Get the current user
+            _currentUser = await Fetcher.GetCurrentUser();
 
-            var result = await httpClient.GetAsync(_serverUrl + "/api/user/me");
-            if (result.IsSuccessStatusCode)
-            {
-                _currentUser = await result.Content.ReadFromJsonAsync<UserDTO>();
-                if (_currentUser == null)
-                {
-                    SetError("Failed to deserialize user");
-                    return;
-                }
-            }
-            else
-            {
-                SetError(result.ReasonPhrase);
-                return;
-            }
-
-            // Connect to SignalR hub
+            // Connect to the SignalR hub
             _hubConnection = new HubConnectionBuilder()
-            .WithUrl(_serverUrl + "/chat_hub").Build();
+            .WithUrl(Fetcher.ServerUrl + "/chat_hub").Build();
 
             _hubConnection.On<MessageDTO>("ReceiveMessage", message =>
             {
@@ -87,22 +71,9 @@
             await _hubConnection.StartAsync();
 
             // Get all contacts
-            result = await httpClient.GetAsync(_serverUrl + "/api/user/all");
+            var contacts = await Fetcher.GetAllContacts();
+            _contacts = contacts.Where(c => c.Username != _currentUser.Username);
 
-            if (result.IsSuccessStatusCode)
-            {
-                var contacts = await result.Content.ReadFromJsonAsync<IEnumerable<UserDTO>>();
-                if (contacts == null)
-                {
-                    SetError("Failed to deserialize contacts");
-                    return;
-                }
-                _contacts = contacts.Where(c => c.Username != _currentUser.Username);
-            }
-            else
-            {
-                _error = result.ReasonPhrase;
-            }
         }
         catch (Exception e)
         {

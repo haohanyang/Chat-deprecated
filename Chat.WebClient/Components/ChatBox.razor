@@ -1,3 +1,4 @@
+@using Chat.WebClient.Utils;
 @using Chat.Common.DTOs;
 
 <div class="col-md-6 col-lg-7 col-xl-8 chat-right">
@@ -72,13 +73,10 @@
     [CascadingParameter]
     public UserDTO CurrentUser { get; set; } = new();
 
-
-
     private bool _loading = false;
     private bool _sending = false;
     private string? _error;
     private string _input = string.Empty;
-
 
     private void SetError(string error)
     {
@@ -93,24 +91,8 @@
         // Fetch messages from the server
         try
         {
-            using var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync(new Uri("http://localhost:5001/api/message/between?user=" +
-            CurrentContact.Username));
-
-            if (response.IsSuccessStatusCode)
-            {
-                var messages = (await response.Content.ReadFromJsonAsync<IEnumerable<MessageDTO>>())?.ToList();
-                if (messages == null)
-                {
-                    SetError("Failed to retrieve messages");
-                    return;
-                }
-                await OnFetchMessage.InvokeAsync(messages);
-            }
-            else
-            {
-                _error = response.ReasonPhrase;
-            }
+            var messages = await Fetcher.GetMessages(CurrentContact.Username);
+            await OnFetchMessage.InvokeAsync(messages);
         }
         catch (Exception e)
         {
@@ -129,7 +111,6 @@
             Console.WriteLine("Input is null");
             return;
         }
-
         var message = new MessageDTO
             {
                 Content = _input,
@@ -140,17 +121,8 @@
         try
         {
             _sending = true;
-            using var httpClient = new HttpClient();
-            var response = await httpClient.PostAsJsonAsync(new Uri("http://localhost:5001/api/message/send"), message);
-
-            if (response.IsSuccessStatusCode)
-            {
-                await OnSendMessage.InvokeAsync(message);
-            }
-            else
-            {
-                _error = response.ReasonPhrase;
-            }
+            await Fetcher.SendMessage(CurrentContact.Username, message);
+            await OnSendMessage.InvokeAsync(message);
         }
         catch (Exception e)
         {
@@ -162,6 +134,4 @@
             _input = "";
         }
     }
-
-
 }
