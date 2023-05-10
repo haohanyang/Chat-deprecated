@@ -35,8 +35,11 @@ public class ApplicationDbContext : IdentityDbContext<User>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
+    
         // User-group relationships
+        modelBuilder.Entity<User>()
+            .HasIndex(e => e.UserName).IsUnique();
+        modelBuilder.Entity<User>().HasIndex(e => e.Email).IsUnique();
         modelBuilder.Entity<User>()
             .HasMany(e => e.Memberships)
             .WithOne(e => e.User)
