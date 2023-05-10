@@ -85,7 +85,7 @@ public class AuthenticationController : ControllerBase
         }
         catch (AuthenticationException e)
         {
-            return BadRequest(e.Message);
+            return Unauthorized(e.Message);
         }
         catch (Exception e)
         {

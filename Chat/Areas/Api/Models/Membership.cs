@@ -8,13 +8,11 @@ public class Membership
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    public string UserId { get; set; }
-    public string Username {get;set;}
-    public User User { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public User User { get; set; } = null!;
 
     public int GroupId { get; set; }
-    public string GroupName {get;set;}
-    public Group Group { get; set; }
+    public Group Group { get; set; } = null!;
 
-    public DateTime JoinedTime { get; set; }
+    public DateTime CreatedAt { get; set; } = new();
 }

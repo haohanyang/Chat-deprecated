@@ -16,18 +16,13 @@
                 if ($("#register-" + field + "-input-feedback").text().trim() != "") {
                     $("#register-" + field + "-input").addClass("is-invalid");
                 }
-            });
-        @* $(".register-button").on("click", function (e) {
-            e.preventDefault();
-            $(this).prop('disabled', true);
-            }); *@
             })
+        });
     </script>
 }
 
 <main role="main" class="container">
-    <form asp-area="WebPage" asp-controller="Auth" asp-action="Register" method="post"
-        class="form-signin border rounded">
+    <form asp-area="WebPage" asp-controller="Auth" asp-action="Register" method="post" class="form-auth border rounded">
         <div class="text-center">
             <img class="mb-4" src="https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg" alt="" width="72"
                 height="72">

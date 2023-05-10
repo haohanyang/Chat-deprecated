@@ -16,13 +16,8 @@
                 if ($("#login-" + field + "-input-feedback").text().trim() != "") {
                     $("#login-" + field + "-input").addClass("is-invalid");
                 }
-            });
-        @* $(".login-button").on("click", function (e) {
-            e.preventDefault();
-            $(this).prop('disabled', true);
-            }); *@
             })
-
+        });
     </script>
 }
 
@@ -36,7 +31,7 @@
     }
     else
     {
-        <form asp-area="WebPage" asp-asp-controller="Auth" asp-action="Login" class="form-signin border rounded">
+        <form asp-area="WebPage" asp-asp-controller="Auth" asp-action="Login" class="form-auth border rounded">
             <div class="text-center">
                 <img class="mb-4" src="https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg" alt="" width="72"
                     height="72">

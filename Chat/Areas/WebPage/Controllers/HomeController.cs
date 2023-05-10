@@ -36,7 +36,7 @@ public class HomeController : Controller
         {
             model.LoggedInUser = JsonSerializer.Deserialize<UserDTO>((string)TempData["loggedInUser"]!);
         }
-        
+
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var name = User.FindFirstValue(ClaimTypes.Name);
         if (username != null && name != null)
@@ -46,7 +46,9 @@ public class HomeController : Controller
             {
                 Username = username,
                 FirstName = names[0],
-                LastName = names[1]
+                LastName = names[1],
+                // TODO: retrieve avatar url from db
+                AvararUrl = "https://api.dicebear.com/6.x/initials/svg?seed=" + names[0][0] + names[1][0]
             };
         }
 

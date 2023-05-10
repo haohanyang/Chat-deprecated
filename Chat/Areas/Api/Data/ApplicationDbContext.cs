@@ -12,10 +12,10 @@ public class ApplicationDbContext : IdentityDbContext<User>
     {
     }
 
-    public DbSet<Group> Groups { get; set; }
-    public DbSet<Membership> Memberships { get; set; }
-    public DbSet<GroupMessage> GroupMessages { get; set; }
-    public DbSet<UserMessage> UserMessages { get; set; }
+    public DbSet<Group> Groups { get; set; } = null!;
+    public DbSet<Membership> Memberships { get; set; } = null!;
+    public DbSet<GroupMessage> GroupMessages { get; set; } = null!;
+    public DbSet<UserMessage> UserMessages { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -35,7 +35,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-    
+
         // User-group relationships
         modelBuilder.Entity<User>()
             .HasIndex(e => e.UserName).IsUnique();
@@ -56,7 +56,6 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .OnDelete(DeleteBehavior.NoAction)
             .HasForeignKey(e => e.GroupId)
             .IsRequired();
-
 
         // User-message relationships
         modelBuilder.Entity<User>()

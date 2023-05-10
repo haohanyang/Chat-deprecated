@@ -28,33 +28,14 @@ public class MessageController : ControllerBase
         _userService = userService;
     }
 
-    [HttpGet("all")]
-    public async Task<IActionResult> AllMessages([FromQuery(Name = "username")] string username)
-    {
-        try
-        {
-            var messages = await _messageService.GetAllMessages(username);
-            return Ok(messages);
-        }
-        catch (ArgumentException e)
-        {
-            return BadRequest(e.Message);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError("Failed to get all messages with unexpected error:{}" + e.Message);
-            return BadRequest("Unexpected error");
-        }
-    }
-
     [Authorize]
-    [HttpGet("between")]
-    public async Task<IActionResult> MessagesBetween([FromQuery(Name = "user")] string contact)
+    [HttpGet("with")]
+    public async Task<IActionResult> GetMessagesWith([FromQuery(Name = "user")] string contact)
     {
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         try
         {
-            var messages = await _messageService.GetAllMessagesBetween(username, contact);
+            var messages = await _messageService.GetAllMessages(username, contact);
             return Ok(messages);
         }
         catch (ArgumentException e)
@@ -67,6 +48,7 @@ public class MessageController : ControllerBase
             return BadRequest("Unexpected error");
         }
     }
+
 
     [HttpPost("send_test")]
     public async Task<ActionResult> SendTestMessage([FromQuery(Name = "username")] string username)

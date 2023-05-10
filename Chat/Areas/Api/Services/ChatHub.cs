@@ -77,14 +77,24 @@ public class ChatHub : Hub<IChatClient>
         var groups = await _groupService.GetJoinedGroups(sender);
         if (!groups.Contains(groupName))
             throw new ArgumentException("You are not in the group " + groupName);
-        await Clients.Group(groupName).ReceiveMessage(new MessageDTO
-        { Sender = sender, Receiver = groupName, Content = content });
+        await Clients.Group(groupName).ReceiveMessage(
+            new MessageDTO
+            {
+                Sender = sender,
+                Receiver = groupName,
+                Content = content
+            });
     }
 
     // Test only, assume sender and receivers are valid
     public async Task SendUserMessage(string sender, string receiver, string content)
     {
         await Clients.User(receiver)
-            .ReceiveMessage(new MessageDTO { Sender = sender, Receiver = receiver, Content = content });
+            .ReceiveMessage(new MessageDTO
+            {
+                Sender = sender,
+                Receiver = receiver,
+                Content = content
+            });
     }
 }

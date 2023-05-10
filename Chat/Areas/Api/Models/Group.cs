@@ -6,9 +6,7 @@ public class Group
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
-
-    public string GroupName { get; set; }
-
+    public string GroupName { get; set; } = string.Empty;
     public IEnumerable<Membership> Memberships { get; set; } = new List<Membership>();
-    public List<GroupMessage> Messages { get; set; } = new();
+    public IEnumerable<GroupMessage> Messages { get; set; } = Enumerable.Empty<GroupMessage>();
 }

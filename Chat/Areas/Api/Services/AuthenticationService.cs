@@ -32,15 +32,26 @@ public class AuthenticationService : IAuthenticationService
     /// <returns>The <see cref="IdentityResult" /> that indicates success or failure.</returns>
     public async Task<IdentityResult> Register(AuthenticationRequest request)
     {
-        // Check if username already exists
-        var user = await _userManager.FindByNameAsync(request.Username);
 
-        if (user != null)
+        if ((await _userManager.FindByNameAsync(request.Username)) != null)
         {
-            throw new ArgumentException("User " + request.Username + " already exists");
+            throw new ArgumentException("Username " + request.Username + " already exists");
         }
+
+        if ((await _userManager.FindByEmailAsync(request.Email)) != null)
+        {
+            throw new ArgumentException("Email " + request.Username + " already exists");
+        }
+
         var result = await _userManager.CreateAsync(
-            new User { UserName = request.Username, Email = request.Email, FirstName = request.FirstName, LastName = request.LastName}, 
+            new User
+            {
+                UserName = request.Username,
+                Email = request.Email,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                AvatarUrl = "https://api.dicebear.com/6.x/initials/svg?seed=" + request.FirstName[0] + request.LastName[0]
+            },
             request.Password);
         return result;
     }
