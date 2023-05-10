@@ -25,7 +25,7 @@ public class AuthController : Controller
 
         if (!ModelState.IsValid)
         {
-            // TODO: 
+            Response.StatusCode = BadRequest().StatusCode;
             return View(model);
         }
 
@@ -48,11 +48,13 @@ public class AuthController : Controller
         catch (AuthenticationException e)
         {
             model.Error = "The username or password is incorrect.";
+            Response.StatusCode = Unauthorized().StatusCode;
             return View(model);
         }
         catch (Exception e)
         {
             model.Error = "Unexpected error";
+            Response.StatusCode = 500;
             _logger.LogError("Failed to login with unexpected error: {}", e.Message);
             return View(model);
         }
@@ -101,6 +103,7 @@ public class AuthController : Controller
     {
         if (!ModelState.IsValid)
         {
+            Response.StatusCode = BadRequest().StatusCode;
             return View(model);
         }
 
@@ -127,12 +130,14 @@ public class AuthController : Controller
         catch (ArgumentException e)
         {
             model.Errors = new List<string> { e.Message };
+            Response.StatusCode = Unauthorized().StatusCode;
             return View(model);
         }
         catch (Exception e)
         {
             _logger.LogError("Failed to Register with unexpected error:{}", e.Message);
             model.Errors = new List<string> { "Unexpected error" };
+            Response.StatusCode = 500;
             return View(model);
         }
 
