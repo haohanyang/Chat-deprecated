@@ -14,44 +14,42 @@ public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
     private readonly IAuthenticationService _authenticationService;
+    private readonly IUserService _userService;
 
-    public HomeController(ILogger<HomeController> logger, IAuthenticationService authenticationService)
+    public HomeController(ILogger<HomeController> logger, IAuthenticationService authenticationService, IUserService userService)
     {
         _logger = logger;
         _authenticationService = authenticationService;
+        _userService = userService;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
         var model = new HomeViewModel();
-
-
         if (TempData["RedirectMessage"] != null)
         {
             model.RedirectMessage = JsonSerializer.Deserialize<RedirectMessage>((string)TempData["RedirectMessage"]!);
         }
 
-        // If redirected from login
         if (TempData["loggedInUser"] != null)
         {
             model.LoggedInUser = JsonSerializer.Deserialize<UserDTO>((string)TempData["loggedInUser"]!);
         }
 
-        var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var name = User.FindFirstValue(ClaimTypes.Name);
-        if (username != null && name != null)
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (username != null)
         {
-            var names = name.Split(';');
-            model.LoggedInUser = new UserDTO
+            try
             {
-                Username = username,
-                FirstName = names[0],
-                LastName = names[1],
-                // TODO: retrieve avatar url from db
-                AvararUrl = "https://api.dicebear.com/6.x/initials/svg?seed=" + names[0][0] + names[1][0]
-            };
+                var user = await _userService.GetUser(username);
+                model.LoggedInUser = user;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Failed to get current user with unexpected error:{}" + e.Message);
+                model.Error = "Unexpected error";
+            }
         }
-
         return View(model);
     }
 

@@ -1,0 +1,12 @@
+.contact-status-avatar {
+    width: 40px;
+    border-radius: 50%;
+}
+
+.chat-contact-status {
+    height: 60px;
+}
+
+.action-menu {
+    margin-left: auto;
+}

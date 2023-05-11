@@ -11,32 +11,41 @@
 }
 
 <main role="main" class="container">
-    @if (Model.RedirectMessage != null)
+    @if (Model.Error != null)
     {
-        var alert = Model.RedirectMessage.Type == RedirectMessageType.SUCCESS ? "alert-success" : "alert-danger";
-        <div class="alert alert-dismissible @alert fade show" role="alert">
-            <strong>@Model.RedirectMessage.Message</strong>
-            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert alert-danger" role="alert">
+            @Model.Error
         </div>
     }
-    <section class="jumbotron text-center">
-        <div class="container">
-            <h1 class="jumbotron-heading home-heading">Chat</h1>
-            <p class="lead text-muted">Something short and leading about the collection below—its contents, the creator,
-                etc. Make it short and sweet, but not too short so folks don't simply skip over it entirely.</p>
-            <p>
-                @if (Model.LoggedInUser == null)
-                {
-                    <a class="btn btn-primary" asp-area="WebPage" asp-controller="Auth" asp-action="Login">Login</a>
-                    <a class="btn btn-primary" asp-area="WebPage" asp-controller="Auth" asp-action="Register">Register</a>
-                }
-                else
-                {
-                <p>Hello @Model.LoggedInUser.Username</p>
-                <a href="/chat">Start
-                    Chatting</a>
-                }
-            </p>
-        </div>
-    </section>
+    else
+    {
+        @if (Model.RedirectMessage != null)
+        {
+            var alert = Model.RedirectMessage.Type == RedirectMessageType.SUCCESS ? "alert-success" : "alert-danger";
+            <div class="alert alert-dismissible @alert fade show" role="alert">
+                <strong>@Model.RedirectMessage.Message</strong>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading home-heading">Chat</h1>
+                <p class="lead text-muted">Something short and leading about the collection below—its contents, the creator,
+                    etc. Make it short and sweet, but not too short so folks don't simply skip over it entirely.</p>
+                <p>
+                    @if (Model.LoggedInUser == null)
+                    {
+                        <a class="btn btn-primary" asp-area="WebPage" asp-controller="Auth" asp-action="Login">Login</a>
+                        <a class="btn btn-primary" asp-area="WebPage" asp-controller="Auth" asp-action="Register">Register</a>
+                    }
+                    else
+                    {
+                    <p>Hello @Model.LoggedInUser.Username</p>
+                    <a href="/chat">Start
+                        Chatting</a>
+                    }
+                </p>
+            </div>
+        </section>
+    }
 </main>

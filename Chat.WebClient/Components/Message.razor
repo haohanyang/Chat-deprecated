@@ -1,16 +1,24 @@
-<li class="d-flex flex-row justify-content-start">
-    <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava6-bg.webp" alt="avatar 1"
-        style="width: 45px; height: 100%;">
-    <div>
-        <p class="small p-2 ms-3 mb-1 rounded-3" style="background-color: #f5f6f7;">@Text</p>
-        <p class="small ms-3 mb-3 rounded-3 text-muted float-end">@Time</p>
+@using Chat.Common.DTOs;
+
+<li class="d-flex flex-row justify-content-start bg-gradient p-1">
+    <img src=@Message_.Sender.AvararUrl alt="avatar" class="message-avatar mt-1">
+    <div class="container">
+        @{
+            var messageClass = "d-table rounded-3 p-2 mb-0 message-content " + (Message_.Sender.Username ==
+            CurrentUser.Username ? "bg-info text-white" : "bg-light");
+        }
+        <p class="@messageClass">
+            @Message_.Content</p>
+        <p class="small text-muted">@@ @Message_.Sender.Username @Message_.Time</p>
     </div>
 </li>
 
 @code {
-    [Parameter]
-    public string Text { get; set; } = "Lorem ipsumdolorsit amet, consectetur adipiscing elit, sed do eiusmod temporincididunt ut labore et dolore magna aliqua";
+    [CascadingParameter]
+    public UserDTO CurrentUser { get; set; } = new();
 
     [Parameter]
-    public DateTime Time { get; set; } = DateTime.Now;
+    public MessageDTO Message_ { get; set; } = new();
+
+
 }

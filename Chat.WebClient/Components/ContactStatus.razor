@@ -1,28 +1,26 @@
 @using Chat.Common.DTOs;
 
-<div class="d-flex justify-content-between align-items-center chat-contact-status mb-3" id="contact-info">
-    <div class="d-flex">
-        <div class="p-2">
-            <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp" alt="avatar"
-                width="40">
-        </div>
-        <div class="d-flex flex-column justify-content-center align-items-start">
-            <div>
-                <span class="contact-status-name">@CurrentContact?.FirstName @CurrentContact?.LastName</span>
-                <span class="contact-status-username text-secondary">@@ @CurrentContact?.Username</span>
-            </div>
-            @if (IsOnline)
-            {
-                <span class="badge text-bg-success contact-status">Online</span>
-            }
-            else
-            {
-                <span class="badge text-bg-secondary">Offline</span>
-            }
-        </div>
+<div class="d-flex chat-contact-status">
+    <div class="m-1">
+        <img src=@CurrentContact?.AvararUrl alt="avatar" class="contact-status-avatar">
     </div>
-    <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <div class="d-flex flex-column align-items-start">
+        <div>
+            <span class="contact-status-name">@CurrentContact?.Name</span>
+            <span class="contact-status-username text-secondary">@@ @CurrentContact?.Username</span>
+        </div>
+
+        @if (IsOnline)
+        {
+            <span class="badge text-bg-success contact-status">Online</span>
+        }
+        else
+        {
+            <span class="badge text-bg-secondary">Offline</span>
+        }
+    </div>
+    <div class="dropdown action-menu">
+        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         </button>
         <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="#">Action</a></li>
@@ -30,6 +28,8 @@
             <li><a class="dropdown-item" href="#">Something else here</a></li>
         </ul>
     </div>
+
+
 </div>
 
 @code {

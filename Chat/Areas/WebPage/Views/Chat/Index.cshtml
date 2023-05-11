@@ -10,7 +10,10 @@
 }
 
 @section Scripts {
-    <script src="_framework/blazor.webassembly.js"></script>
+    @if (Model.LoggedInUser != null)
+    {
+        <script src="_framework/blazor.webassembly.js"></script>
+    }
     <script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
     <script>
         const popoverTriggerList = document.querySelectorAll('#gg')
@@ -25,22 +28,25 @@
                 content: picker
             })
         }
+        window.ScrollDownToChatBottom = () => {
+            $(".chat-message-box").scrollTop($(".chat-message-box").prop("scrollHeight"));
+        }
     </script>
 }
 
-<main class="container py-5 pt-3 pb-3">
-    @if (Model.LoggedInUser != null)
-    {
-        <div id="chat">
-            <div class="spinner-border loading-progress" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="alert alert-danger" role="alert">
-            You haven't logged in
-        </div>
-    }
+@if (Model.LoggedInUser != null)
+{
+    <main id="chat" role="main" class="container">
+    <div class="spinner-border loading-progress" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
 </main>
+}
+else
+{
+    <main role="main" class="container">
+    <div class="alert alert-danger" role="alert">
+        You haven't logged in
+    </div>
+</main>
+}

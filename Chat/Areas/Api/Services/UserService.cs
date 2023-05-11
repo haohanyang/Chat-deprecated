@@ -16,15 +16,13 @@ public class UserService : IUserService
     public async Task<IEnumerable<UserDTO>> GetAllUsers()
     {
         var users = await _dbContext.Users.ToListAsync();
-        return users.Select(u => new UserDTO { Username = u.UserName!, FirstName = u.FirstName, LastName = u.LastName });
+        return users.Select(u => u.ToDTO());
     }
-
 
     public async Task<bool> UserExists(string username)
     {
         var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
         return user != null;
-
     }
 
     public async Task<UserDTO> GetUser(string username)
@@ -32,9 +30,8 @@ public class UserService : IUserService
         var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
         if (user == null)
         {
-            throw new ArgumentException("User does not exist");
+            throw new ArgumentException($"User {username} doesn't exist");
         }
-        return (new UserDTO { Username = user.UserName!, FirstName = user.FirstName, LastName = user.LastName });
+        return user.ToDTO();
     }
-
 }

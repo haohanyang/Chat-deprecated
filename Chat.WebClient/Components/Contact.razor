@@ -1,21 +1,20 @@
 @using Chat.Common.DTOs;
 
 
-<li style="cursor:pointer" class="p-2 border-bottom" @onclick="OnClick">
+<li class="list-group-item" @onclick="OnClick">
     <a class="d-flex justify-content-between text-decoration-none">
         <div class="d-flex flex-row">
             <div>
-                <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp" alt="avatar"
-                    class="d-flex align-self-center me-3" width="60">
+                <img src=@User.AvararUrl alt="avatar" class="d-flex align-self-center me-3 contact-list-avatar">
             </div>
             <div class="pt-1">
-                <p class="fw-bold mb-0">@User.FirstName @User.LastName</p>
-                <p class="small text-muted"> @LastMessage?.Content</p>
+                <p class="fw-bold mb-0">@User.Name</p>
+                <p class="small text-muted last-message text-truncate"> @LastMessage?.Content</p>
             </div>
         </div>
         <div class="pt-1">
             <p class="small text-muted mb-1">
-                @LastMessage?.Time
+                Now
             </p>
             @if (UnreadMessageCounts > 0)
             {
@@ -33,15 +32,14 @@
     [Parameter]
     public MessageDTO? LastMessage { get; set; }
 
-    [Parameter]
-    public int UnreadMessageCounts { get; set; } = 0;
+    public int UnreadMessageCounts { get; set; } = 1;
 
     [Parameter]
-    public EventCallback<UserDTO> OnClickCallback { get; set; }
+    public EventCallback<string> OnClickCallback { get; set; }
 
 
     private void OnClick()
     {
-        OnClickCallback.InvokeAsync(User);
+        OnClickCallback.InvokeAsync(User.Username);
     }
 }

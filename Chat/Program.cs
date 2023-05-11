@@ -9,10 +9,11 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+var AllowAnyPortOnLocalhost = "_allowAnyPortOnLocalhost";
 
 // Add services to the container.
 builder.Services.AddLogging();
-// builder.Services.AddServerSideBlazor();
+
 builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
@@ -42,6 +43,16 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: AllowAnyPortOnLocalhost,
+                      policy =>
+                      {
+                          policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost");
+                          policy.AllowAnyHeader();
+                      });
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>();
@@ -114,6 +125,7 @@ if (!app.Environment.IsDevelopment())
 }
 else
 {
+    app.UseCors(AllowAnyPortOnLocalhost);
     app.UseSwagger();
     app.UseSwaggerUI();
 }

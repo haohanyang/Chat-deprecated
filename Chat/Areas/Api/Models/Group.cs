@@ -8,5 +8,5 @@ public class Group
     public int Id { get; set; }
     public string GroupName { get; set; } = string.Empty;
     public IEnumerable<Membership> Memberships { get; set; } = new List<Membership>();
-    public IEnumerable<GroupMessage> Messages { get; set; } = Enumerable.Empty<GroupMessage>();
+    public IEnumerable<GroupMessage> Messages { get; set; } = new List<GroupMessage>();
 }

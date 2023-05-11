@@ -15,15 +15,15 @@
         @if (_error == null)
         {
             <div class="col-md-12">
-                <div class="card" id="chat3" style="border-radius: 15px;">
+                <div class="card chat-card bg-light">
                     <div class="card-body">
-                        <div class="row pt-2">
-                            <ContactList Contacts=@_contacts OnClickContactCallback=@SetCurrentContact />
+                        <div class="row">
+                            <ContactList Data=@_data OnClickContactCallback=@SetCurrentContact />
                             @if (_currentContact != null)
                             {
                                 <CascadingValue Value=@_currentUser>
                                     <ChatBox CurrentContact=@_currentContact OnFetchMessage=@SetMessages
-                                        OnSendMessage=@AddMessage Messages=@_messages/>
+                                        OnSendMessage=@AddMessage Data=@_data/>
                                 </CascadingValue>
                             }
                         </div>
@@ -45,40 +45,55 @@
     private string? _userInput;
     private string? _error;
     private bool _loading = false;
-    private IEnumerable<UserDTO>? _contacts;
-    private List<MessageDTO>? _messages;
+    private Dictionary<string, (UserDTO, List<MessageDTO>)> _data = new Dictionary<string, (UserDTO, List<MessageDTO>)>();
+    
     private UserDTO? _currentUser;
+    private UserDTO? _currentContact { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         _loading = true;
         try
         {
-            /// Get the current user
+            // Get the current user
             _currentUser = await Fetcher.GetCurrentUser();
-
             // Connect to the SignalR hub
             _hubConnection = new HubConnectionBuilder()
-            .WithUrl(Fetcher.ServerUrl + "/chat_hub").Build();
+            .WithUrl(Fetcher.ServerUrl + "/chat_hub", options => {
+                var token = Fetcher.GetAccessToken();
+                if (token != null) {
+                    options.Headers.Add("Authorization", "Bearer " + token);
+                }
+            }).Build();
 
             _hubConnection.On<MessageDTO>("ReceiveMessage", message =>
             {
                 Console.WriteLine("ReceiveMessage");
-                AddMessage(message);
+                AddMessage((message.Sender.Username, message));
                 this.StateHasChanged();
             });
 
             await _hubConnection.StartAsync();
 
             // Get all contacts
-            var contacts = await Fetcher.GetAllContacts();
-            _contacts = contacts.Where(c => c.Username != _currentUser.Username);
+            var contacts = (await Fetcher.GetAllContacts())
+            .Where(contact => contact.Username != _currentUser.Username);
+
+            Console.WriteLine("Contacts: " + contacts.Count());
+
+            foreach(var contact in contacts)
+            {
+                _data.Add(contact.Username, (new UserDTO {
+                    Username = contact.Username,
+                    Name = contact.Name,
+                    AvararUrl = contact.AvararUrl
+                }, new List<MessageDTO>()));
+            }
 
         }
         catch (Exception e)
         {
             _error = e.Message;
-
         }
         finally
         {
@@ -86,22 +101,32 @@
         }
 
     }
-    private UserDTO? _currentContact { get; set; }
 
-    private void SetCurrentContact(UserDTO contact)
+    private void SetCurrentContact(string contactUsername)
     {
-        _currentContact = contact;
+        _currentContact = _data[contactUsername].Item1;
     }
 
-    private void SetMessages(List<MessageDTO>? messages)
+    private void SetMessages((string, List<MessageDTO>) args)
     {
-        Console.WriteLine("SetMessages");
-        _messages = messages;
+        var (contactUsername, messages) = args;
+        if (_data.ContainsKey(contactUsername))
+        {
+            var contact = _data[contactUsername].Item1;
+            _data[contactUsername] = (contact, messages);
+        } else {
+            Console.Error.WriteLine("SetMessages: Contact " + contactUsername + " not found");
+        }
     }
 
-    private void AddMessage(MessageDTO message)
+    private void AddMessage((string, MessageDTO) args)
     {
-        _messages?.Add(message);
+        var (contactUsername, message) = args;
+        if (_data.ContainsKey(contactUsername)) {
+            _data[contactUsername].Item2.Add(message);
+        } else {
+            Console.Error.WriteLine("AddMessage: Contact not found");
+        }
     }
 
     private void SetError(string? error)

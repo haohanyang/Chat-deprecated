@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <Folder Include="Areas\Api\Controllers" />
-    <Folder Include="Data\Migrations" />
   </ItemGroup>
 
   <ItemGroup>

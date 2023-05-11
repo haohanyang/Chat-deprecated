@@ -32,7 +32,7 @@ public class AuthController : Controller
         model.Error = null;
         try
         {
-            var token = await _authenticationService.Login(new AuthenticationRequest { Username = model.Username, Password = model.Password });
+            var token = await _authenticationService.Login(new LoginRequest { Username = model.Username, Password = model.Password });
             // Set cookie
             Response.Cookies.Append("chat_access_token", token, new CookieOptions()
             {
@@ -80,7 +80,6 @@ public class AuthController : Controller
         if (Request.Cookies["chat_access_token"] != null)
         {
             Response.Cookies.Delete("chat_access_token");
-            _logger.LogInformation("DElete cookie");
             TempData["RedirectMessage"] = JsonSerializer.Serialize(new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "You have logged out." });
         }
         else
@@ -110,7 +109,7 @@ public class AuthController : Controller
         try
         {
             var result = await _authenticationService.Register(
-                new AuthenticationRequest
+                new RegistrationRequest
                 {
                     Username = model.Username,
                     Email = model.Email,

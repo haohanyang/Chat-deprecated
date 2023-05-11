@@ -4,75 +4,67 @@
 
 <div class="col-md-6 col-lg-7 col-xl-8 chat-right">
     <ContactStatus CurrentContact=@CurrentContact />
-    <div class="border rounded p-2 chat-message-box">
-        @if (_loading)
-        {
-            <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        }
-        else
-        {
+    @if (_loading)
+    {
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    }
+    else
+    {
+        <ul class="border rounded p-2 chat-message-box bg-white">
             @if (_error != null)
             {
                 <div class="alert alert-danger" role="alert">
                     @_error
                 </div>
             }
-            else if (Messages == null)
-            {
-                <div class="alert alert-danger" role="alert">
-                    Message is null
-                </div>
-            }
             else
             {
-                <MessageList Messages=@Messages />
+                var messages = Data[CurrentContact.Username].Item2;
+                @foreach (var message in messages)
+                {
+                    <Message Message_=@message />
+                }
             }
-        }
-    </div>
+        </ul>
 
+    }
+    <div>
+
+    </div>
     <div class="text-muted d-flex justify-content-between align-items-center pe-3 pt-3 mt-2">
+        <img src=@CurrentUser.AvararUrl alt="avatar" class="input-avatar">
 
-        <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava6-bg.webp" alt="avatar 3"
-            style="width: 40px; height: 100%;">
-
-        <div class="form-outline ml-2 flex-fill">
-            <input type="text" class="form-control form-control" id="message-input" @bind="_input">
-        </div>
-        <div>
-            <button class="ms-1 text-muted btn m-0 p-0 file-button" href="#!"><i class="bi bi-paperclip"></i></button>
-            <button class="ms-3 text-muted btn m-0 p-0 emoji-button" href="#!"><i
-                    class="bi bi-emoji-smile"></i></button>
-
-            @if (_sending)
-            {
-                <button class="ms-3 btn m-0 p-0 disabled send-btn" @onclick=@SendMessage><i class="bi bi-send"></i></button>
+        <div class="form-outline container input-group">
+            @{
+                var sendButtonClass = "btn p-2 send-btn" + (_sending ? "disabled" : "");
             }
-            else
-            {
-                <button class="ms-3 btn m-0 p-0 send-button" @onclick=@SendMessage><i class="bi bi-send"></i></button>
-            }
+            <input type="text" class="form-control" id="message-input" @bind=@_input>
+            <button class="btn p-2" type="file"><i class="bi bi-paperclip"></i></button>
+            <button class="btn p-2 emoji-button"><i class="bi bi-emoji-smile"></i></button>
+            <button class=@sendButtonClass @onclick=@SendMessage><i class="bi bi-send"></i></button>
         </div>
     </div>
-
 </div>
+
+
 
 @code {
     [Parameter]
     public UserDTO CurrentContact { get; set; } = new();
 
-    private UserDTO _currentUser = new();
+    private UserDTO _currentContact = new();
 
     [Parameter]
-    public List<MessageDTO>? Messages { get; set; }
+    public Dictionary<string, (UserDTO, List<MessageDTO>)> Data { get; set; } = new();
 
     [Parameter]
-    public EventCallback<MessageDTO> OnSendMessage { get; set; }
+    public EventCallback<(string, MessageDTO)> OnSendMessage { get; set; }
 
 
     [Parameter]
-    public EventCallback<List<MessageDTO>> OnFetchMessage { get; set; }
+    public EventCallback<(string, List<MessageDTO>)> OnFetchMessage { get; set; }
 
     [CascadingParameter]
     public UserDTO CurrentUser { get; set; } = new();
@@ -92,8 +84,8 @@
     {
         if (firstRender)
         {
-     // Add popover
-    await JS.InvokeVoidAsync("AddEmojiPopover", ".emoji-button");
+            // Add popover
+            await JS.InvokeVoidAsync("AddEmojiPopover", ".emoji-button");
         }
     }
 
@@ -103,8 +95,8 @@
         // Fetch messages from the server
         try
         {
-            var messages = await Fetcher.GetMessages(CurrentContact.Username);
-            await OnFetchMessage.InvokeAsync(messages);
+            var messages = await Fetcher.GetChat(CurrentContact.Username);
+            await OnFetchMessage.InvokeAsync((CurrentContact.Username, messages));
         }
         catch (Exception e)
         {
@@ -119,23 +111,22 @@
     protected override async Task OnParametersSetAsync()
     {
         // If the current contact is changed, fetch new messages
-        if (CurrentContact.Username != _currentUser.Username)
+        if (CurrentContact.Username != _currentContact.Username)
         {
             _loading = true;
             try
             {
-                var messages = await Fetcher.GetMessages(CurrentContact.Username);
-                await OnFetchMessage.InvokeAsync(messages);
+                var messages = await Fetcher.GetChat(CurrentContact.Username);
+                await OnFetchMessage.InvokeAsync((CurrentContact.Username, messages));
             }
             catch (Exception e)
             {
                 _error = e.Message;
-                await OnFetchMessage.InvokeAsync(null);
             }
             finally
             {
                 _loading = false;
-                _currentUser = CurrentContact;
+                _currentContact = CurrentContact;
             }
         }
 
@@ -151,15 +142,16 @@
         var message = new MessageDTO
             {
                 Content = _input,
-                Sender = CurrentUser.Username,
-                Receiver = CurrentContact.Username,
+                Sender = CurrentUser,
+                Receiver = CurrentContact,
                 Time = DateTime.Now
             };
         try
         {
             _sending = true;
             await Fetcher.SendMessage(CurrentContact.Username, message);
-            await OnSendMessage.InvokeAsync(message);
+            await OnSendMessage.InvokeAsync((CurrentContact.Username, message));
+            await JS.InvokeVoidAsync("ScrollDownToChatBottom");
         }
         catch (Exception e)
         {
@@ -168,7 +160,7 @@
         finally
         {
             _sending = false;
-            _input = "";
+            _input = string.Empty;
         }
     }
 }

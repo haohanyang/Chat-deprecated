@@ -34,7 +34,7 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] AuthenticationRequest request)
+    public async Task<IActionResult> Register([FromBody] RegistrationRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest("Model state is invalid");
@@ -46,7 +46,6 @@ public class AuthenticationController : ControllerBase
             {
                 _logger.LogInformation("User {} was created", request.Username);
                 return CreatedAtAction(nameof(Register), new { username = request.Username }, request);
-
             }
             foreach (var error in result.Errors)
                 ModelState.AddModelError(error.Code, error.Description);
@@ -69,7 +68,7 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] AuthenticationRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest("Model state is invalid");

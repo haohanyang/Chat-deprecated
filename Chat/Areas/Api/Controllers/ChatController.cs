@@ -8,18 +8,18 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Chat.Areas.Api.Controllers;
 
-[Route("api/message")]
+[Route("api/chat")]
 [ApiController]
-public class MessageController : ControllerBase
+public class ChatController : ControllerBase
 {
     private readonly IHubContext<ChatHub, IChatClient> _hubContext;
-    private readonly ILogger<MessageController> _logger;
+    private readonly ILogger<ChatController> _logger;
     private readonly IMessageService _messageService;
     private readonly IGroupService _groupService;
     private readonly IUserService _userService;
 
-    public MessageController(IHubContext<ChatHub, IChatClient> hubContext,
-        ILogger<MessageController> logger, IGroupService groupService, IUserService userService, IMessageService messageService)
+    public ChatController(IHubContext<ChatHub, IChatClient> hubContext,
+        ILogger<ChatController> logger, IGroupService groupService, IUserService userService, IMessageService messageService)
     {
         _hubContext = hubContext;
         _logger = logger;
@@ -29,13 +29,13 @@ public class MessageController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("with")]
-    public async Task<IActionResult> GetMessagesWith([FromQuery(Name = "user")] string contact)
+    [HttpGet("user_chat")]
+    public async Task<IActionResult> GetUserChat([FromQuery(Name = "user")] string contact)
     {
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         try
         {
-            var messages = await _messageService.GetAllMessages(username, contact);
+            var messages = await _messageService.GetUserChat(username, contact);
             return Ok(messages);
         }
         catch (ArgumentException e)
@@ -49,7 +49,7 @@ public class MessageController : ControllerBase
         }
     }
 
-
+    [Authorize]
     [HttpPost("send_test")]
     public async Task<ActionResult> SendTestMessage([FromQuery(Name = "username")] string username)
     {
@@ -67,7 +67,7 @@ public class MessageController : ControllerBase
     }
 
     [Authorize]
-    [HttpPost("send")]
+    [HttpPost("send_chat")]
     public async Task<ActionResult> SendMessage([FromBody] MessageDTO message)
     {
         if (!ModelState.IsValid)
@@ -77,7 +77,8 @@ public class MessageController : ControllerBase
         {
             if (message.Type == MessageType.GroupMessage)
             {
-                var groupName = message.Receiver;
+                // TODO: fix the name
+                var groupName = message.Receiver.Username;
                 var members = await _groupService.GetGroupMembers(groupName);
 
                 // Check if the sender is in the group
@@ -89,7 +90,7 @@ public class MessageController : ControllerBase
             }
             else
             {
-                var receiver = message.Receiver;
+                var receiver = message.Receiver.Username;
                 if (!await _userService.UserExists(receiver))
                 {
                     throw new ArgumentException("User " + receiver + " doesn't exist");
@@ -100,12 +101,12 @@ public class MessageController : ControllerBase
             var messageId = await _messageService.SaveMessage(message);
             if (message.Type == MessageType.UserMessage)
             {
-                _logger.LogInformation("User {} sent a message to user {}, message id ", username, message.Content,
+                _logger.LogInformation("User {} sent a message to user {}, message id {}", username, message.Content,
                     message.Receiver, messageId);
             }
             else
             {
-                _logger.LogInformation("User {} sent a message to group {}, message id ", username, message.Content,
+                _logger.LogInformation("User {} sent a message to group {}, message id {}", username, message.Content,
                     message.Receiver, messageId);
             }
             return CreatedAtAction(nameof(SendMessage), new { Id = messageId });

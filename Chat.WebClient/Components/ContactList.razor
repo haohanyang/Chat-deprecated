@@ -1,12 +1,22 @@
 @using Chat.Common.DTOs;
 
 <div class="col-md-6 col-lg-5 col-xl-4 chat-left">
-    <ContactSearchBar />
-    <div class="border rounded chat-contact-list">
-        <ul class="list-unstyled mb-0">
-            @foreach (var contact in Contacts)
+    <div class="chat-contact-search">
+        <div class="input-group">
+            <input type="text" class="form-control" aria-label="Contact's name" aria-describedby="search-button-addon">
+            <button class="btn btn-outline-secondary" type="button" id="search-button-addon"><i
+                    class="bi bi-search"></i></button>
+        </div>
+
+    </div>
+    <div class="card chat-contact-list">
+        <ul class="list-group list-group-flush">
+            @foreach (var (_, v) in Data)
             {
-                <Contact User=@contact OnClickCallback=@OnClickContactCallback />
+                var contact = v.Item1;
+                var messages = v.Item2;
+                var lastMessage = messages.Count > 0 ? messages.Last() : null;
+                <Contact User=@contact OnClickCallback=@OnClickContactCallback LastMessage=@lastMessage></Contact>
             }
         </ul>
     </div>
@@ -14,8 +24,8 @@
 
 @code {
     [Parameter]
-    public EventCallback<UserDTO> OnClickContactCallback { get; set; }
+    public EventCallback<string> OnClickContactCallback { get; set; }
 
     [Parameter]
-    public IEnumerable<UserDTO> Contacts { get; set; } = Enumerable.Empty<UserDTO>();
+    public Dictionary<string, (UserDTO, List<MessageDTO>)> Data { get; set; } = new();
 }

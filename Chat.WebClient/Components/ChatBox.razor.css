@@ -1,0 +1,12 @@
+.chat-message-box {
+    position: relative;
+    height: 500px;
+    overflow: scroll;
+    scrollbar-width: thin;
+}
+
+.input-avatar {
+    width: 45px;
+    height: 100%;
+    border-radius: 50%;
+}

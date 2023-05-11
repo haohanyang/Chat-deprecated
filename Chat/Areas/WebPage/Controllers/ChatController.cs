@@ -8,29 +8,30 @@ namespace Chat.Areas.WebPage.Controllers;
 [Area("WebPage")]
 public class ChatController : Controller
 {
-    private readonly IAuthenticationService _authenticationService;
+    private readonly IUserService _userService;
     private readonly ILogger<AuthController> _logger;
 
-    public ChatController(IAuthenticationService authenticationService, ILogger<AuthController> logger)
+    public ChatController(IUserService userService, ILogger<AuthController> logger)
     {
-        _authenticationService = authenticationService;
+        _userService = userService;
         _logger = logger;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
         var model = new ChatViewModel();
-        var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var name = User.FindFirstValue(ClaimTypes.Name);
-        if (username != null && name != null)
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (username != null)
         {
-            var names = name.Split(';');
-            model.LoggedInUser = new UserDTO
+            try
             {
-                Username = username,
-                FirstName = names[0],
-                LastName = names[1]
-            };
+                var user = await _userService.GetUser(username);
+                model.LoggedInUser = user;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Failed to get current user with unexpected error:{}" + e.Message);
+            }
         }
         return View(model);
     }

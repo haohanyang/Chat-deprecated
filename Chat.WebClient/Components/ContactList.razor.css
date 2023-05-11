@@ -1,0 +1,10 @@
+.chat-contact-list {
+    position: relative;
+    height: 570px;
+    overflow: scroll;
+    scrollbar-width: thin;
+}
+
+.chat-contact-search {
+    height: 60px;
+}

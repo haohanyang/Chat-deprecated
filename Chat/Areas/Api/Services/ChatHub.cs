@@ -80,8 +80,8 @@ public class ChatHub : Hub<IChatClient>
         await Clients.Group(groupName).ReceiveMessage(
             new MessageDTO
             {
-                Sender = sender,
-                Receiver = groupName,
+                Sender = new UserDTO { Username = sender, Name = sender },
+                Receiver = new UserDTO { Username = groupName, Name = groupName },
                 Content = content
             });
     }
@@ -92,8 +92,8 @@ public class ChatHub : Hub<IChatClient>
         await Clients.User(receiver)
             .ReceiveMessage(new MessageDTO
             {
-                Sender = sender,
-                Receiver = receiver,
+                Sender = new UserDTO { Username = sender, Name = sender },
+                Receiver = new UserDTO { Username = receiver, Name = receiver },
                 Content = content
             });
     }

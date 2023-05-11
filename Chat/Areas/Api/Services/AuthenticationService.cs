@@ -30,7 +30,7 @@ public class AuthenticationService : IAuthenticationService
     ///     Create the specified user with given username and password
     /// </summary>
     /// <returns>The <see cref="IdentityResult" /> that indicates success or failure.</returns>
-    public async Task<IdentityResult> Register(AuthenticationRequest request)
+    public async Task<IdentityResult> Register(RegistrationRequest request)
     {
 
         if ((await _userManager.FindByNameAsync(request.Username)) != null)
@@ -60,7 +60,7 @@ public class AuthenticationService : IAuthenticationService
     ///     Tries to login with the given username and password. Retrieves the token if the authentication succeeds.
     /// </summary>
     /// <returns>A JSON Web Token that authenticates the user</returns>
-    public async Task<string> Login(AuthenticationRequest request)
+    public async Task<string> Login(LoginRequest request)
     {
         var user = await _userManager.FindByNameAsync(request.Username);
         if (user == null) throw new AuthenticationException("The username or password is incorrect.");
