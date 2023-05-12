@@ -4,12 +4,17 @@
     <img src=@Message_.Sender.AvararUrl alt="avatar" class="message-avatar mt-1">
     <div class="container">
         @{
-            var messageClass = "d-table rounded-3 p-2 mb-0 message-content " + (Message_.Sender.Username ==
+            var messageClass = "d-inline-block rounded-3 p-2 mb-0 message-content " + (Message_.Sender.Username ==
             CurrentUser.Username ? "bg-info text-white" : "bg-light");
         }
         <p class="@messageClass">
-            @Message_.Content</p>
-        <p class="small text-muted">@@ @Message_.Sender.Username @Message_.Time</p>
+            <strong>@Message_.Sender.Name</strong>
+            <br>
+            <small>
+                @Message_.Content
+            </small>
+        </p>
+        <p class="small text-muted">@@ @Message_.Sender.Username @Message_.Time.ToString("H:mm | MMMM dd")</p>
     </div>
 </li>
 
