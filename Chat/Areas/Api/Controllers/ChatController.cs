@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Chat.Areas.Api.Controllers;
 
-[Route("api/chat")]
+[Route("api/users")]
 [ApiController]
 public class ChatController : ControllerBase
 {

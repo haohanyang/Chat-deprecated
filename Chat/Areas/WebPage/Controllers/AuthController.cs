@@ -10,12 +10,12 @@ namespace Chat.Areas.WebPage.Controllers;
 [Area("WebPage")]
 public class AuthController : Controller
 {
-    private readonly IAuthenticationService _authenticationService;
+    private readonly IUserService _userService;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthenticationService authenticationService, ILogger<AuthController> logger)
+    public AuthController(IUserService userService, ILogger<AuthController> logger)
     {
-        _authenticationService = authenticationService;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -32,7 +32,7 @@ public class AuthController : Controller
         model.Error = null;
         try
         {
-            var token = await _authenticationService.Login(new LoginRequest { Username = model.Username, Password = model.Password });
+            var token = await _userService.Login(new LoginRequest { Username = model.Username, Password = model.Password });
             // Set cookie
             Response.Cookies.Append("chat_access_token", token, new CookieOptions()
             {
@@ -108,7 +108,7 @@ public class AuthController : Controller
 
         try
         {
-            var result = await _authenticationService.Register(
+            var result = await _userService.Register(
                 new RegistrationRequest
                 {
                     Username = model.Username,

@@ -42,7 +42,7 @@ public class GroupController : ControllerBase
         var username = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         try
         {
-            await _groupService.CreateGroup(groupName);
+            await _groupService.CreateGroup(username, groupName);
             _logger.LogInformation("Group {} was created by {}", groupName, username);
             return CreatedAtAction(nameof(CreateGroup), new { GroupName = groupName });
         }

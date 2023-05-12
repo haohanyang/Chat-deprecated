@@ -58,7 +58,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<ApplicationDbContext>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IGroupService, GroupService>();

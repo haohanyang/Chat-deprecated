@@ -18,16 +18,22 @@ public class GroupService : IGroupService
         _logger = logger;
     }
 
-    public async Task<int> CreateGroup(string groupName)
+    public async Task<int> CreateGroup(string username, string groupName)
     {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
+        if (user == null)
+        {
+            throw new ArgumentException("User " + groupName + " doesn't exists");
+        }
+
         if (await _dbContext.Groups.FirstOrDefaultAsync(e => e.GroupName == groupName) != null)
         {
             throw new ArgumentException("Group " + groupName + " already exists");
         }
 
-        var group = new Group { GroupName = groupName };
-
+        var group = new Group { GroupName = groupName, Owner = user };
         await _dbContext.Groups.AddAsync(group);
+        var membership = new Membership { User = user, Group = group };
         await _dbContext.SaveChangesAsync();
         return group.Id;
     }
@@ -112,4 +118,22 @@ public class GroupService : IGroupService
         return group != null;
     }
 
+    public async Task<GroupDTO> GetGroup(string groupName)
+    {
+        var group = await _dbContext.Groups.Include(e => e.Owner).FirstOrDefaultAsync(e => e.GroupName == groupName);
+        if (group == null)
+            throw new ArgumentException("Group " + groupName + " doesn't exist");
+
+        return new GroupDTO
+        {
+            Id = group.Id,
+            GroupName = group.GroupName,
+            Owner = group.Owner.ToDTO(),
+        };
+    }
+
+    public Task<IEnumerable<GroupDTO>> GetAllGroups()
+    {
+        throw new NotImplementedException();
+    }
 }

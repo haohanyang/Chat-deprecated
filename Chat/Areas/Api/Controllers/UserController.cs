@@ -1,14 +1,12 @@
-using Chat.Common;
 using Chat.Areas.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Chat.Common.DTOs;
 using System.Security.Claims;
 
 namespace Chat.Areas.Api.Controllers;
 
-[Route("api/user")]
+[Route("api/users")]
 [ApiController]
 public class UserController : ControllerBase
 {

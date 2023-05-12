@@ -46,6 +46,12 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .OnDelete(DeleteBehavior.NoAction)
             .HasForeignKey(e => e.UserId)
             .IsRequired();
+        // modelBuilder.Entity<User>()
+        //     .HasMany(e => e.OwnedGroups)
+        //     .WithOne(e => e.Owner)
+        //     .OnDelete(DeleteBehavior.NoAction)
+        //     .HasForeignKey(e => e.OwnerId)
+        //     .IsRequired();
 
         modelBuilder.Entity<Group>()
             .HasIndex(e => e.GroupName)
@@ -56,6 +62,11 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .OnDelete(DeleteBehavior.NoAction)
             .HasForeignKey(e => e.GroupId)
             .IsRequired();
+        modelBuilder.Entity<Group>().
+            HasOne(e => e.Owner)
+            .WithMany(e => e.OwnedGroups)
+            .HasForeignKey(e => e.OwnerId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         // User-message relationships
         modelBuilder.Entity<User>()

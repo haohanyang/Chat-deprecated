@@ -13,13 +13,11 @@ namespace Chat.Areas.WebPage.Controllers;
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
-    private readonly IAuthenticationService _authenticationService;
     private readonly IUserService _userService;
 
-    public HomeController(ILogger<HomeController> logger, IAuthenticationService authenticationService, IUserService userService)
+    public HomeController(ILogger<HomeController> logger, IUserService userService)
     {
         _logger = logger;
-        _authenticationService = authenticationService;
         _userService = userService;
     }
 

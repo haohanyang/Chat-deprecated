@@ -13,7 +13,7 @@ public class User : IdentityUser
     public IEnumerable<UserMessage> UserMessagesSent { get; set; } = new List<UserMessage>();
     public IEnumerable<UserMessage> UserMessagesReceived { get; set; } = new List<UserMessage>();
     public IEnumerable<GroupMessage> GroupMessagesSent { get; set; } = new List<GroupMessage>();
-
+    public IEnumerable<Group> OwnedGroups { get; set; } = new List<Group>();
     public UserDTO ToDTO()
     {
         return new()

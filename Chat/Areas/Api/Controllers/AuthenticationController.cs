@@ -12,12 +12,12 @@ namespace Chat.Areas.Api.Controllers;
 public class AuthenticationController : ControllerBase
 {
 
-    private readonly IAuthenticationService _authenticationService;
+    private readonly IUserService _userService;
     private readonly ILogger<AuthenticationController> _logger;
 
-    public AuthenticationController(IAuthenticationService authenticationService, ILogger<AuthenticationController> logger)
+    public AuthenticationController(IUserService userService, ILogger<AuthenticationController> logger)
     {
-        _authenticationService = authenticationService;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -40,7 +40,7 @@ public class AuthenticationController : ControllerBase
             return BadRequest("Model state is invalid");
         try
         {
-            var result = await _authenticationService.Register(request);
+            var result = await _userService.Register(request);
 
             if (result.Succeeded)
             {
@@ -74,7 +74,7 @@ public class AuthenticationController : ControllerBase
             return BadRequest("Model state is invalid");
         try
         {
-            var token = await _authenticationService.Login(request);
+            var token = await _userService.Login(request);
             return Ok(new AuthenticationResponse
             {
                 Success = true,
@@ -100,7 +100,7 @@ public class AuthenticationController : ControllerBase
             return BadRequest("Model state is invalid");
         try
         {
-            var result = await _authenticationService.ValidateToken(token);
+            var result = await _userService.ValidateToken(token);
             if (result.IsValid)
             {
                 return Ok("Token is valid");

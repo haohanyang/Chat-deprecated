@@ -4,6 +4,7 @@ using Chat.Areas.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Chat.Areas.Api.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230511165950_addOwnership")]
+    partial class addOwnership
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,16 +37,13 @@ namespace Chat.Areas.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("OwnerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("OwnershipId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("GroupName")
                         .IsUnique();
-
-                    b.HasIndex("OwnerId");
 
                     b.ToTable("Groups");
                 });
@@ -104,6 +104,34 @@ namespace Chat.Areas.Api.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Memberships");
+                });
+
+            modelBuilder.Entity("Chat.Areas.Api.Models.Ownership", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Ownership");
                 });
 
             modelBuilder.Entity("Chat.Areas.Api.Models.User", b =>
@@ -356,17 +384,6 @@ namespace Chat.Areas.Api.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Chat.Areas.Api.Models.Group", b =>
-                {
-                    b.HasOne("Chat.Areas.Api.Models.User", "Owner")
-                        .WithMany("OwnedGroups")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
-                });
-
             modelBuilder.Entity("Chat.Areas.Api.Models.GroupMessage", b =>
                 {
                     b.HasOne("Chat.Areas.Api.Models.Group", "Receiver")
@@ -403,6 +420,25 @@ namespace Chat.Areas.Api.Data.Migrations
                     b.Navigation("Group");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Chat.Areas.Api.Models.Ownership", b =>
+                {
+                    b.HasOne("Chat.Areas.Api.Models.Group", "Group")
+                        .WithOne("Ownership")
+                        .HasForeignKey("Chat.Areas.Api.Models.Ownership", "GroupId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Chat.Areas.Api.Models.User", "Owner")
+                        .WithMany("Ownerships")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("Chat.Areas.Api.Models.UserMessage", b =>
@@ -480,6 +516,9 @@ namespace Chat.Areas.Api.Data.Migrations
                     b.Navigation("Memberships");
 
                     b.Navigation("Messages");
+
+                    b.Navigation("Ownership")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Chat.Areas.Api.Models.User", b =>
@@ -488,7 +527,7 @@ namespace Chat.Areas.Api.Data.Migrations
 
                     b.Navigation("Memberships");
 
-                    b.Navigation("OwnedGroups");
+                    b.Navigation("Ownerships");
 
                     b.Navigation("UserMessagesReceived");
 
