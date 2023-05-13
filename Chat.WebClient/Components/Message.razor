@@ -1,7 +1,7 @@
 @using Chat.Common.DTOs;
 
 <li class="d-flex flex-row justify-content-start bg-gradient p-1">
-    <img src=@Message_.Sender.AvararUrl alt="avatar" class="message-avatar mt-1">
+    <img src=@Message_.Sender.AvatarUrl alt="avatar" class="message-avatar mt-1 rounded-circle h-100" width="45">
     <div class="container">
         @{
             var messageClass = "d-inline-block rounded-3 p-2 mb-0 message-content " + (Message_.Sender.Username ==

@@ -1,31 +1,76 @@
-@using Chat.Common.DTOs;
-
+@using Chat.Common.DTOs
 <div class="col-md-6 col-lg-5 col-xl-4 chat-left">
-    <div class="chat-contact-search">
+    <div class="chat-contact-search pt-2">
         <div class="input-group">
             <input type="text" class="form-control" aria-label="Contact's name" aria-describedby="search-button-addon">
-            <button class="btn btn-outline-secondary" type="button" id="search-button-addon"><i
-                    class="bi bi-search"></i></button>
+            <button class="btn btn-outline-secondary" type="button" id="search-button-addon">
+                <i class="bi bi-search">
+                </i>
+            </button>
         </div>
-
     </div>
-    <div class="card chat-contact-list">
-        <ul class="list-group list-group-flush">
-            @foreach (var (_, v) in Data)
-            {
-                var contact = v.Item1;
-                var messages = v.Item2;
-                var lastMessage = messages.Count > 0 ? messages.Last() : null;
-                <Contact User=@contact OnClickCallback=@OnClickContactCallback LastMessage=@lastMessage></Contact>
-            }
-        </ul>
+
+    <div class="accordion contact-list">
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne"
+                    aria-expanded="true" aria-controls="collapseOne">
+                    Users
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#contact-list">
+                <div class="accordion-body p-0">
+                    <div class="card user-contact-list border-0">
+                        <UserContactList AddUserContactCallback="AddUserContactCallback"
+                            SetUserContactCallback="SetUserContactCallback" UserChats="UserChats">
+                        </UserContactList>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                    Groups
+                </button>
+            </h2>
+            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#contact-list">
+                <div class="accordion-body p-0">
+                    <div class="card group-contact-list border-0">
+                        <ul class="list-group list-group-flush">
+                            <GroupContactList SetGroupContactCallback="SetGroupContactCallback"
+                                AddGroupContactCallback="AddGroupContactCallback" GroupChats="GroupChats">
+                            </GroupContactList>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 @code {
+
     [Parameter]
     public EventCallback<string> OnClickContactCallback { get; set; }
 
     [Parameter]
-    public Dictionary<string, (UserDTO, List<MessageDTO>)> Data { get; set; } = new();
+    public EventCallback<(string, UserDTO)> AddUserContactCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SetUserContactCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<(int, GroupDTO)> AddGroupContactCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<int> SetGroupContactCallback { get; set; }
+
+    [Parameter]
+    public Dictionary<string, (UserDTO, List<UserMessageDTO>)> UserChats { get; set; } = new();
+
+    [Parameter]
+    public Dictionary<int, (GroupDTO, List<GroupMessageDTO>)> GroupChats { get; set; } = new();
+
 }

@@ -1,0 +1,76 @@
+@using Chat.Common.DTOs;
+@using Chat.WebClient.Components;
+@using Chat.WebClient.Services;
+@using Microsoft.AspNetCore.SignalR.Client;
+@using System.Collections.Generic;
+@inject IHttpService HttpService;
+
+<ul class="list-group list-group-flush">
+    @if (_isLoading)
+    {
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+
+    }
+    else if (_errorMessage != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            _errorMessage
+        </div>
+    }
+    else
+    {
+        @foreach (var (_, v) in GroupChats)
+        {
+            var contact = v.Item1;
+            var messages = v.Item2;
+            var lastMessage = messages.Count > 0 ? messages.Last() : null;
+            <GroupContact Contact_=@contact SetGroupContactCallback=@SetGroupContactCallback LastMessage=@lastMessage />
+
+        }
+    }
+</ul>
+
+@code {
+    [Parameter]
+    public EventCallback<int> SetGroupContactCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<(int, GroupDTO)> AddGroupContactCallback { get; set; }
+
+    [Parameter]
+    public Dictionary<int, (GroupDTO, List<GroupMessageDTO>)> GroupChats { get; set; } = new();
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            var groupContacts = await HttpService.GetAllGroupContacts(CurrentUser.Username);
+            foreach (var groupContact in groupContacts)
+            {
+                await AddGroupContactCallback.InvokeAsync((groupContact.Id, groupContact));
+            }
+        }
+        catch (Exception e)
+        {
+            _errorMessage = e.Message;
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+
+@code {
+
+    [CascadingParameter]
+    public UserDTO CurrentUser { get; set; } = new();
+
+}

@@ -35,8 +35,8 @@ public class ChatHub : Hub<IChatClient>
         {
             // Add user to group communications
             var groups = await _groupService.GetJoinedGroups(username);
-            await Task.WhenAll(groups.Select(groupName =>
-                Groups.AddToGroupAsync(connectionId, groupName)));
+            await Task.WhenAll(groups.Select(group =>
+                Groups.AddToGroupAsync(connectionId, group.Name)));
         }
         catch (Exception e)
         {
@@ -59,8 +59,8 @@ public class ChatHub : Hub<IChatClient>
         {
             // Remove user from connections to groups
             var groups = await _groupService.GetJoinedGroups(username);
-            await Task.WhenAll(groups.Select(groupName =>
-                Groups.RemoveFromGroupAsync(connectionId, groupName)));
+            await Task.WhenAll(groups.Select(group =>
+                Groups.RemoveFromGroupAsync(connectionId, group.Name)));
         }
         catch (Exception e)
         {
@@ -69,32 +69,5 @@ public class ChatHub : Hub<IChatClient>
         }
 
         await base.OnDisconnectedAsync(exception);
-    }
-
-    // Test only, assume sender is valid
-    public async Task SendGroupMessage(string sender, string groupName, string content)
-    {
-        var groups = await _groupService.GetJoinedGroups(sender);
-        if (!groups.Contains(groupName))
-            throw new ArgumentException("You are not in the group " + groupName);
-        await Clients.Group(groupName).ReceiveMessage(
-            new MessageDTO
-            {
-                Sender = new UserDTO { Username = sender, Name = sender },
-                Receiver = new UserDTO { Username = groupName, Name = groupName },
-                Content = content
-            });
-    }
-
-    // Test only, assume sender and receivers are valid
-    public async Task SendUserMessage(string sender, string receiver, string content)
-    {
-        await Clients.User(receiver)
-            .ReceiveMessage(new MessageDTO
-            {
-                Sender = new UserDTO { Username = sender, Name = sender },
-                Receiver = new UserDTO { Username = receiver, Name = receiver },
-                Content = content
-            });
     }
 }

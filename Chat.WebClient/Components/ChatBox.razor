@@ -1,44 +1,41 @@
-@using Chat.WebClient.Utils
-@using Chat.Common.DTOs
-@inject IJSRuntime JS
+@using Chat.WebClient.Services;
+@using Chat.Common.DTOs;
+@inject IJSRuntime JS;
+@inject IHttpService HttpService;
 
-<div class="col-md-6 col-lg-7 col-xl-8 chat-right">
-    <ContactStatus CurrentContact=@CurrentContact />
-    @if (_loading)
-    {
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    }
-    else
-    {
-        <ul class="border rounded p-2 chat-message-box bg-white">
-            @if (_error != null)
-            {
-                <div class="alert alert-danger" role="alert">
-                    @_error
-                </div>
-            }
-            else
-            {
-                var messages = Data[CurrentContact.Username].Item2;
-                @foreach (var message in messages)
-                {
-                    <Message Message_=@message />
-                }
-            }
-        </ul>
 
-    }
-    <div>
 
+@if (_loading)
+{
+    <ul class="border rounded p-2 chat-message-box bg-white d-flex justify-content-center align-items-center">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
     </div>
-    <div class="text-muted d-flex justify-content-between align-items-center pe-3 pt-3 mt-2">
-        <img src=@CurrentUser.AvararUrl alt="avatar" class="input-avatar">
+</ul>
+}
+else
+{
+    <ul class="border rounded p-2 chat-message-box bg-white">
+    @if (_error != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                @_error
+            </div>
+        }
+        else
+        {
+            @foreach (var message in Chats)
+            {
+                <Message Message_=@message />
+            }
+        }
+    </ul>
 
+    <div class="text-muted d-flex justify-content-between align-items-center message-input">
+        <img src=@CurrentUser.AvatarUrl alt="avatar" class="input-avatar rounded-circle" width="45">
         <div class="form-outline container input-group">
             @{
-                var sendButtonClass = "btn p-2 send-btn" + (_sending ? "disabled" : "");
+                var sendButtonClass = "btn p-2 send-btn" + (_sending || _loading ? "disabled" : "");
             }
             <input type="text" class="form-control" id="message-input" @bind=@_input>
             <button class="btn p-2" type="file"><i class="bi bi-paperclip"></i></button>
@@ -46,25 +43,35 @@
             <button class=@sendButtonClass @onclick=@SendMessage><i class="bi bi-send"></i></button>
         </div>
     </div>
-</div>
+}
+
+
+
 
 
 
 @code {
     [Parameter]
-    public UserDTO CurrentContact { get; set; } = new();
+    public BaseDTO CurrentContact { get; set; } = new();
 
-    private UserDTO _currentContact = new();
-
-    [Parameter]
-    public Dictionary<string, (UserDTO, List<MessageDTO>)> Data { get; set; } = new();
+    private BaseDTO _currentContact = new();
 
     [Parameter]
-    public EventCallback<(string, MessageDTO)> OnSendMessage { get; set; }
+    public List<MessageDTO> Chats { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<(string, UserMessageDTO)> AddUserMessage { get; set; }
+
+    [Parameter]
+    public EventCallback<(int, GroupMessageDTO)> AddGroupMessage { get; set; }
 
 
     [Parameter]
-    public EventCallback<(string, List<MessageDTO>)> OnFetchMessage { get; set; }
+    public EventCallback<(string, List<UserMessageDTO>)> SetUserMessages { get; set; }
+
+
+    [Parameter]
+    public EventCallback<(int, List<GroupMessageDTO>)> SetGroupMessages { get; set; }
 
     [CascadingParameter]
     public UserDTO CurrentUser { get; set; } = new();
@@ -79,45 +86,34 @@
         _error = error;
         _loading = false;
     }
+    @*
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+if (_loading == false || _error == null)
+{
+await JS.InvokeVoidAsync("AddEmojiPopover", ".emoji-button");
+}
+} *@
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            // Add popover
-            await JS.InvokeVoidAsync("AddEmojiPopover", ".emoji-button");
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        _loading = true;
-        // Fetch messages from the server
-        try
-        {
-            var messages = await Fetcher.GetChat(CurrentContact.Username);
-            await OnFetchMessage.InvokeAsync((CurrentContact.Username, messages));
-        }
-        catch (Exception e)
-        {
-            _error = e.Message;
-        }
-        finally
-        {
-            _loading = false;
-        }
-    }
 
     protected override async Task OnParametersSetAsync()
     {
         // If the current contact is changed, fetch new messages
-        if (CurrentContact.Username != _currentContact.Username)
+        if (CurrentContact.ClientId != _currentContact.ClientId)
         {
             _loading = true;
             try
             {
-                var messages = await Fetcher.GetChat(CurrentContact.Username);
-                await OnFetchMessage.InvokeAsync((CurrentContact.Username, messages));
+                if (CurrentContact is UserDTO userDto)
+                {
+                    var messages = await HttpService.GetUserChat(CurrentUser.Username, userDto.Username);
+                    await SetUserMessages.InvokeAsync((userDto.Username, messages));
+                }
+                else if (CurrentContact is GroupDTO groupDto)
+                {
+                    var messages = await HttpService.GetGroupChat(groupDto.Id);
+                    await SetGroupMessages.InvokeAsync((groupDto.Id, messages));
+                }
             }
             catch (Exception e)
             {
@@ -134,24 +130,41 @@
 
     private async Task SendMessage()
     {
-        if (_input == null)
+        if (_input == string.Empty)
         {
             Console.WriteLine("Input is null");
             return;
         }
-        var message = new MessageDTO
-            {
-                Content = _input,
-                Sender = CurrentUser,
-                Receiver = CurrentContact,
-                Time = DateTime.Now
-            };
+
         try
         {
             _sending = true;
-            await Fetcher.SendMessage(CurrentContact.Username, message);
-            await OnSendMessage.InvokeAsync((CurrentContact.Username, message));
-            await JS.InvokeVoidAsync("ScrollDownToChatBottom");
+            if (_currentContact is UserDTO userDto)
+            {
+                var message = new UserMessageDTO
+                    {
+                        Content = _input,
+                        Sender = CurrentUser,
+                        Receiver = userDto,
+                        Time = DateTime.Now
+                    };
+                await HttpService.SendUserMessage(message);
+                await AddUserMessage.InvokeAsync((userDto.Username, message));
+                await JS.InvokeVoidAsync("ScrollDownToChatBottom");
+            }
+            else if (_currentContact is GroupDTO groupDto)
+            {
+                var message = new GroupMessageDTO
+                    {
+                        Content = _input,
+                        Sender = CurrentUser,
+                        Receiver = groupDto,
+                        Time = DateTime.Now
+                    };
+                await HttpService.SendGroupMessage(message);
+                // await AddGroupMessage.InvokeAsync((groupDto.Id, message));
+                await JS.InvokeVoidAsync("ScrollDownToChatBottom");
+            }
         }
         catch (Exception e)
         {

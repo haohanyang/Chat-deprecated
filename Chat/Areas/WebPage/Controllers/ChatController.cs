@@ -26,7 +26,7 @@ public class ChatController : Controller
             try
             {
                 var user = await _userService.GetUser(username);
-                model.LoggedInUser = user;
+                model.LoggedInUser = user.ToDto();
             }
             catch (Exception e)
             {

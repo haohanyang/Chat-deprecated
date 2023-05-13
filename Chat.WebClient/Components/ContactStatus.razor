@@ -1,42 +1,128 @@
 @using Chat.Common.DTOs;
 
-<div class="d-flex chat-contact-status">
-    <div class="m-1">
-        <img src=@CurrentContact?.AvararUrl alt="avatar" class="contact-status-avatar">
-    </div>
-    <div class="d-flex flex-column align-items-start">
-        <div>
-            <span class="contact-status-name">@CurrentContact?.Name</span>
-            <span class="contact-status-username text-secondary">@@ @CurrentContact?.Username</span>
-        </div>
 
+<div class="d-flex chat-contact-status">
+    @if (CurrentContact is UserDTO user)
+    {
+        <div class="m-1">
+            <img src=@CurrentContact.AvatarUrl alt="avatar" class="contact-status-avatar rounded-circle" width="45">
+        </div>
+        <div class="d-flex flex-column align-items-start">
+        <div>
+            <span class="contact-status-name">@user.Name</span>
+            <span class="contact-status-username text-secondary">@@ @user.Username</span>
+        </div>
         @if (IsOnline)
-        {
-            <span class="badge text-bg-success contact-status">Online</span>
-        }
-        else
-        {
-            <span class="badge text-bg-secondary">Offline</span>
-        }
+            {
+                <span class="badge text-bg-success contact-status">Online</span>
+            }
+            else
+            {
+                <span class="badge text-bg-secondary">Offline</span>
+            }
+        </div>
+    }
+    else if (CurrentContact is GroupDTO group)
+    {
+        <div class="m-1">
+            <img src=@CurrentContact.AvatarUrl alt="avatar" class="contact-status-avatar rounded-circle" width="45">
+        </div>
+        <div class="d-flex flex-column align-items-start">
+        <span class="contact-status-name">@group.Name</span>
+        <span class="small text-muted"> @group.Members.Count.ToString() members</span>
     </div>
+    }
     <div class="dropdown action-menu">
         <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         </button>
         <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
+            <li>
+                <hr class="dropdown-divider">
+            </li>
+            <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#create-group-modal" href="#">Create
+                    group</a></li>
+            <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#join-group-modal" href="#">Join
+                    group</a></li>
         </ul>
     </div>
-
-
 </div>
+
+@* @if (CurrentContact != null && CurrentContact is UserDTO user)
+{
+<div class="d-flex chat-contact-status">
+<div class="m-1">
+<img src=@CurrentContact.AvatarUrl alt="avatar" class="contact-status-avatar rounded-circle" width="45">
+</div>
+<div class="d-flex flex-column align-items-start">
+<div>
+<span class="contact-status-name">@user.Name</span>
+<span class="contact-status-username text-secondary">@@ @user.Username</span>
+</div>
+@if (IsOnline)
+{
+<span class="badge text-bg-success contact-status">Online</span>
+}
+else
+{
+<span class="badge text-bg-secondary">Offline</span>
+}
+</div>
+<div class="dropdown action-menu">
+<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+</button>
+<ul class="dropdown-menu">
+<li><a class="dropdown-item" href="#">Action</a></li>
+<li>
+<hr class="dropdown-divider">
+</li>
+<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#create-group-modal" href="#">Create
+group</a></li>
+<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#join-group-modal" href="#">Join
+group</a></li>
+</ul>
+</div>
+</div>
+}
+else if (CurrentContact != null && CurrentContact is GroupDTO group)
+{
+<div class="d-flex chat-contact-status">
+<div class="m-1">
+<img src=@CurrentContact.AvatarUrl alt="avatar" class="contact-status-avatar rounded-circle" width="45">
+</div>
+<div class="d-flex flex-column align-items-start">
+<span class="contact-status-name">@group.Name</span>
+<span class="small text-muted"> @group.Members.Count.ToString() members</span>
+</div>
+<div class="dropdown action-menu">
+<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+</button>
+<ul class="dropdown-menu">
+<li><a class="dropdown-item" href="#">Action</a></li>
+<li>
+<hr class="dropdown-divider">
+</li>
+<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#create-group-modal">Join group</a></li>
+<li><a class="dropdown-item" href="#">Create group</a></li>
+<li><a class="dropdown-item" href="#">Something else here</a></li>
+</ul>
+</div>
+</div>
+}
+
+@code {
+
+[Parameter]
+public BaseDTO? CurrentContact { get; set; }
+
+public bool IsOnline { get; set; } = true;
+
+} *@
 
 @code {
 
     [Parameter]
-    public UserDTO? CurrentContact { get; set; }
+    public BaseDTO CurrentContact { get; set; } = new();
 
     public bool IsOnline { get; set; } = true;
-
 }

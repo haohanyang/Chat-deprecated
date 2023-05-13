@@ -23,35 +23,36 @@ public class GroupService : IGroupService
         var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
         if (user == null)
         {
-            throw new ArgumentException("User " + groupName + " doesn't exists");
+            throw new ArgumentException("User " + username + " doesn't exists");
         }
 
-        if (await _dbContext.Groups.FirstOrDefaultAsync(e => e.GroupName == groupName) != null)
+        var group = new Group
         {
-            throw new ArgumentException("Group " + groupName + " already exists");
-        }
-
-        var group = new Group { GroupName = groupName, Owner = user };
+            Name = groupName,
+            Owner = user,
+            AvatarUrl = "https://api.dicebear.com/6.x/initials/svg?seed=" + groupName
+        };
         await _dbContext.Groups.AddAsync(group);
         var membership = new Membership { User = user, Group = group };
+        await _dbContext.Memberships.AddAsync(membership);
         await _dbContext.SaveChangesAsync();
         return group.Id;
     }
 
-    public async Task<int> JoinGroup(string username, string groupName)
+    public async Task<int> JoinGroup(string username, int groupId)
     {
         var user = await _dbContext.Users.Include(e => e.Memberships).FirstOrDefaultAsync(e => e.UserName == username);
         var group = await _dbContext.Groups.Include(e => e.Memberships)
-            .FirstOrDefaultAsync(e => e.GroupName == groupName);
+            .FirstOrDefaultAsync(e => e.Id == groupId);
 
         if (user == null)
             throw new ArgumentException("User " + username + " doesn't exist");
 
         if (group == null)
-            throw new ArgumentException("Group " + groupName + " doesn't exist");
+            throw new ArgumentException("Group " + groupId + " doesn't exist");
 
         if (UserInGroup(user, group))
-            throw new ArgumentException("User " + username + " is already in group " + groupName);
+            throw new ArgumentException("User " + username + " is already in group " + groupId);
 
         var membership = new Membership { User = user, Group = group };
 
@@ -60,21 +61,21 @@ public class GroupService : IGroupService
         return membership.Id;
     }
 
-    public async Task LeaveGroup(string username, string groupName)
+    public async Task LeaveGroup(string username, int groupId)
     {
 
         var user = await _dbContext.Users.Include(e => e.Memberships).FirstOrDefaultAsync(e => e.UserName == username);
         var group = await _dbContext.Groups.Include(e => e.Memberships)
-            .FirstOrDefaultAsync(e => e.GroupName == groupName);
+            .FirstOrDefaultAsync(e => e.Id == groupId);
 
         if (user == null)
             throw new ArgumentException("User " + username + " doesn't exist");
 
         if (group == null)
-            throw new ArgumentException("Group " + groupName + " doesn't exist");
+            throw new ArgumentException("Group " + groupId + " doesn't exist");
 
         if (!UserInGroup(user, group))
-            throw new ArgumentException("User " + username + " is not in group " + groupName);
+            throw new ArgumentException("User " + username + " is not in group " + groupId);
 
         var membership = await _dbContext.Memberships.FirstOrDefaultAsync(e => e.UserId == user.Id && e.GroupId == group.Id);
         _dbContext.Remove(membership!);
@@ -82,24 +83,24 @@ public class GroupService : IGroupService
     }
 
 
-    public async Task<IEnumerable<string>> GetGroupMembers(string groupName)
+    public async Task<IEnumerable<UserDTO>> GetGroupMembers(int groupId)
     {
         var group = await _dbContext.Groups.Include(e => e.Memberships).ThenInclude(e => e.User)
-            .FirstOrDefaultAsync(e => e.GroupName == groupName);
+            .FirstOrDefaultAsync(e => e.Id == groupId);
         if (group == null)
-            throw new ArgumentException("Group " + groupName + " doesn't exist");
+            throw new ArgumentException("Group " + groupId + " doesn't exist");
 
-        return group.Memberships.Select(e => e.User.UserName!);
+        return group.Memberships.Select(e => e.User.ToDto());
     }
 
-    public async Task<IEnumerable<string>> GetJoinedGroups(string username)
+    public async Task<IEnumerable<GroupDTO>> GetJoinedGroups(string username)
     {
         var user = await _dbContext.Users.Include(e => e.Memberships).ThenInclude(m => m.Group)
             .FirstOrDefaultAsync(e => e.UserName == username);
         if (user == null)
             throw new ArgumentException("User " + username + " doesn't exist");
 
-        return user.Memberships.Select(e => e.Group.GroupName);
+        return user.Memberships.Select(e => e.Group.ToDto());
     }
 
     private bool UserInGroup(User user, Group group)
@@ -112,24 +113,19 @@ public class GroupService : IGroupService
     }
 
 
-    public async Task<bool> GroupExists(string groupName)
+    public async Task<bool> GroupExists(int groupId)
     {
-        var group = await _dbContext.Groups.FirstOrDefaultAsync(e => e.GroupName == groupName);
+        var group = await _dbContext.Groups.FirstOrDefaultAsync(e => e.Id == groupId);
         return group != null;
     }
 
-    public async Task<GroupDTO> GetGroup(string groupName)
+    public async Task<GroupDTO> GetGroup(int groupId)
     {
-        var group = await _dbContext.Groups.Include(e => e.Owner).FirstOrDefaultAsync(e => e.GroupName == groupName);
+        var group = await _dbContext.Groups.Include(e => e.Owner).FirstOrDefaultAsync(e => e.Id == groupId);
         if (group == null)
-            throw new ArgumentException("Group " + groupName + " doesn't exist");
+            throw new ArgumentException("Group " + groupId + " doesn't exist");
 
-        return new GroupDTO
-        {
-            Id = group.Id,
-            GroupName = group.GroupName,
-            Owner = group.Owner.ToDTO(),
-        };
+        return group.ToDto();
     }
 
     public Task<IEnumerable<GroupDTO>> GetAllGroups()

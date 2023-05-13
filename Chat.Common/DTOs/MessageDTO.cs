@@ -1,9 +1,20 @@
 ﻿namespace Chat.Common.DTOs;
 
-public readonly record struct MessageDTO(string Sender, string Receiver, DateTime Time, MessageType Type, string Content);
-
-public enum MessageType
+public class MessageDTO
 {
-    UserMessage,
-    GroupMessage
+    public int Id { get; set; }
+    public UserDTO Sender { get; set; } = new();
+    public DateTime Time { get; set; } = DateTime.Now;
+    public string Content { get; set; } = string.Empty;
+
+}
+
+public class UserMessageDTO : MessageDTO
+{
+    public UserDTO Receiver { get; set; } = new();
+}
+
+public class GroupMessageDTO : MessageDTO
+{
+    public GroupDTO Receiver { get; set; } = new();
 }

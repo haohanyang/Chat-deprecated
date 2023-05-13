@@ -1,8 +1,8 @@
-﻿@using Chat.WebClient.Components;
-@using Chat.WebClient.Utils;
-@using Chat.Common.DTOs;
+﻿@using Chat.Common.DTOs;
+@using Chat.WebClient.Services;
+@using Chat.WebClient.Components;
 @using Microsoft.AspNetCore.SignalR.Client;
-@using System.Collections.Generic;
+@inject IHttpService HttpService;
 
 <div class="row">
     @if (_loading)
@@ -18,14 +18,38 @@
                 <div class="card chat-card bg-light">
                     <div class="card-body">
                         <div class="row">
-                            <ContactList Data=@_data OnClickContactCallback=@SetCurrentContact />
-                            @if (_currentContact != null)
-                            {
-                                <CascadingValue Value=@_currentUser>
-                                    <ChatBox CurrentContact=@_currentContact OnFetchMessage=@SetMessages
-                                        OnSendMessage=@AddMessage Data=@_data/>
-                                </CascadingValue>
-                            }
+                            <CascadingValue Value="_currentUser">
+                                @* Left *@
+                                <ContactList UserChats="_userChats" GroupChats="_groupChats" AddUserContactCallback="AddUserContact"
+                                    AddGroupContactCallback="AddGroupContact" SetUserContactCallback="SetUserContact"
+                                    SetGroupContactCallback="SetGroupContact">
+                                </ContactList>
+                                 @* Right *@
+                                 <div class="col-md-6 col-lg-7 col-xl-8 chat-right">
+                                     <ContactStatus CurrentContact=@_currentContact />
+                                      @if (_currentContact is UserDTO contact)
+                                    {
+                                        var (_, chats) = _userChats[contact.Username];
+                                        <ChatBox Chats="chats.Cast<MessageDTO>().ToList()" CurrentContact="_currentContact"
+                                            AddGroupMessage="AddGroupMessage" AddUserMessage="AddUserMessage"
+                                            SetGroupMessages="SetGroupMessages" SetUserMessages="SetUserMessages">
+                                        </ChatBox>
+                                    }
+                                    else if (_currentContact is GroupDTO groupDto)
+                                    {
+                                        var (_, chats) = _groupChats[groupDto.Id];
+                                        <ChatBox Chats="chats.Cast<MessageDTO>().ToList()" CurrentContact="_currentContact"
+                                            AddGroupMessage="AddGroupMessage" AddUserMessage="AddUserMessage"
+                                            SetGroupMessages="SetGroupMessages" SetUserMessages="SetUserMessages">
+                                        </ChatBox>
+                                    }
+
+                                 </div>
+                                    <CreateGroupModal>
+                                    </CreateGroupModal>
+                                    <JoinGroupModal>
+                                    </JoinGroupModal>
+                            </CascadingValue>
                         </div>
                     </div>
                 </div>
@@ -42,13 +66,13 @@
 
 @code {
     private HubConnection? _hubConnection;
-    private string? _userInput;
     private string? _error;
     private bool _loading = false;
-    private Dictionary<string, (UserDTO, List<MessageDTO>)> _data = new Dictionary<string, (UserDTO, List<MessageDTO>)>();
-    
+    private Dictionary<string, (UserDTO, List<UserMessageDTO>)> _userChats = new();
+    private Dictionary<int, (GroupDTO, List<GroupMessageDTO>)> _groupChats = new();
+
     private UserDTO? _currentUser;
-    private UserDTO? _currentContact { get; set; }
+    private BaseDTO? _currentContact;
 
     protected override async Task OnInitializedAsync()
     {
@@ -56,40 +80,31 @@
         try
         {
             // Get the current user
-            _currentUser = await Fetcher.GetCurrentUser();
+            _currentUser = await HttpService.GetCurrentUser();
             // Connect to the SignalR hub
             _hubConnection = new HubConnectionBuilder()
-            .WithUrl(Fetcher.ServerUrl + "/chat_hub", options => {
-                var token = Fetcher.GetAccessToken();
-                if (token != null) {
+            .WithUrl(HttpService.GetServerUrl() + "/chat_hub", options =>
+            {
+                var token = HttpService.GetAccessToken();
+                if (token != null)
+                {
                     options.Headers.Add("Authorization", "Bearer " + token);
                 }
             }).Build();
 
-            _hubConnection.On<MessageDTO>("ReceiveMessage", message =>
+            _hubConnection.On<UserMessageDTO>("ReceiveUserMessage", message =>
             {
-                Console.WriteLine("ReceiveMessage");
-                AddMessage((message.Sender.Username, message));
+                AddUserMessage((message.Sender.Username, message));
+                this.StateHasChanged();
+            });
+
+            _hubConnection.On<GroupMessageDTO>("ReceiveGroupMessage", message =>
+            {
+                AddGroupMessage((message.Receiver.Id, message));
                 this.StateHasChanged();
             });
 
             await _hubConnection.StartAsync();
-
-            // Get all contacts
-            var contacts = (await Fetcher.GetAllContacts())
-            .Where(contact => contact.Username != _currentUser.Username);
-
-            Console.WriteLine("Contacts: " + contacts.Count());
-
-            foreach(var contact in contacts)
-            {
-                _data.Add(contact.Username, (new UserDTO {
-                    Username = contact.Username,
-                    Name = contact.Name,
-                    AvararUrl = contact.AvararUrl
-                }, new List<MessageDTO>()));
-            }
-
         }
         catch (Exception e)
         {
@@ -99,33 +114,81 @@
         {
             _loading = false;
         }
-
     }
 
-    private void SetCurrentContact(string contactUsername)
+    private void SetGroupContact(int groupId)
     {
-        _currentContact = _data[contactUsername].Item1;
+        _currentContact = _groupChats[groupId].Item1;
     }
 
-    private void SetMessages((string, List<MessageDTO>) args)
+    private void SetUserContact(string username)
     {
-        var (contactUsername, messages) = args;
-        if (_data.ContainsKey(contactUsername))
+        _currentContact = _userChats[username].Item1;
+    }
+
+    private void AddUserContact((string, UserDTO) args)
+    {
+        var (username, user) = args;
+        _userChats.Add(username, (user, new List<UserMessageDTO>()));
+    }
+
+    private void AddGroupContact((int, GroupDTO) args)
+    {
+        var (groupId, group) = args;
+        _groupChats.Add(groupId, (group, new List<GroupMessageDTO>()));
+    }
+
+    private void SetUserMessages((string, List<UserMessageDTO>) args)
+    {
+        var (username, messages) = args;
+        if (_userChats.ContainsKey(username))
         {
-            var contact = _data[contactUsername].Item1;
-            _data[contactUsername] = (contact, messages);
-        } else {
-            Console.Error.WriteLine("SetMessages: Contact " + contactUsername + " not found");
+            var contact = _userChats[username].Item1;
+            _userChats[username] = (contact, messages);
+        }
+        else
+        {
+            Console.Error.WriteLine($"Failed to set user message: User {username} was not found");
         }
     }
 
-    private void AddMessage((string, MessageDTO) args)
+    private void SetGroupMessages((int, List<GroupMessageDTO>) args)
     {
-        var (contactUsername, message) = args;
-        if (_data.ContainsKey(contactUsername)) {
-            _data[contactUsername].Item2.Add(message);
-        } else {
-            Console.Error.WriteLine("AddMessage: Contact not found");
+        var (groupId, messages) = args;
+        if (_groupChats.ContainsKey(groupId))
+        {
+            var contact = _groupChats[groupId].Item1;
+            _groupChats[groupId] = (contact, messages);
+        }
+        else
+        {
+            Console.Error.WriteLine($"Failed to set group message: Group id {groupId} was not found");
+        }
+    }
+
+    private void AddUserMessage((string, UserMessageDTO) args)
+    {
+        var (username, message) = args;
+        if (_userChats.ContainsKey(username))
+        {
+            _userChats[username].Item2.Add(message);
+        }
+        else
+        {
+            Console.Error.WriteLine($"AddMessage failed. User {username} was not found");
+        }
+    }
+
+    private void AddGroupMessage((int, GroupMessageDTO) args)
+    {
+        var (groupId, message) = args;
+        if (_groupChats.ContainsKey(groupId))
+        {
+            _groupChats[groupId].Item2.Add(message);
+        }
+        else
+        {
+            Console.Error.WriteLine($"AddMessage failed. Group id {groupId} was not found");
         }
     }
 

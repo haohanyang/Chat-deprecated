@@ -67,7 +67,7 @@ public class AuthController : Controller
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (username != null)
         {
-            model.LoggedInUser = new UserDTO { Username = (string)username };
+            model.LoggedInUser = new UserDTO { Username = username };
             model.Error = "You are already logged in.";
         }
         return View(model);

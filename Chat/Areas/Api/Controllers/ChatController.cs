@@ -8,34 +8,40 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Chat.Areas.Api.Controllers;
 
-[Route("api/users")]
+[Route("api/chats")]
 [ApiController]
 public class ChatController : ControllerBase
 {
     private readonly IHubContext<ChatHub, IChatClient> _hubContext;
     private readonly ILogger<ChatController> _logger;
     private readonly IMessageService _messageService;
-    private readonly IGroupService _groupService;
     private readonly IUserService _userService;
+    private readonly IGroupService _groupService;
 
     public ChatController(IHubContext<ChatHub, IChatClient> hubContext,
-        ILogger<ChatController> logger, IGroupService groupService, IUserService userService, IMessageService messageService)
+        ILogger<ChatController> logger, IUserService userService, IGroupService groupService, IMessageService messageService)
     {
         _hubContext = hubContext;
         _logger = logger;
-        _groupService = groupService;
         _messageService = messageService;
         _userService = userService;
+        _groupService = groupService;
     }
 
+    /// <summary>
+    /// Get the chat between the current user and the user with the given username
+    /// </summary>
     [Authorize]
-    [HttpGet("user_chat")]
-    public async Task<IActionResult> GetUserChat([FromQuery(Name = "user")] string contact)
+    [HttpGet("user/{username1}/{username2}")]
+    public async Task<IActionResult> GetUserChat([FromRoute(Name = "username1")] string username1,
+        [FromRoute(Name = "username2")] string username2)
     {
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (username != username1 && username != username2)
+            return BadRequest("You can only get your own chat");
         try
         {
-            var messages = await _messageService.GetUserChat(username, contact);
+            var messages = await _messageService.GetUserChat(username1, username2);
             return Ok(messages);
         }
         catch (ArgumentException e)
@@ -44,72 +50,83 @@ public class ChatController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError("MessagesBetween failed with unexpected error:{}" + e.Message);
+            _logger.LogError("Failed to get user chat between {} {} with unexpected error: {}", username1, username2, e.Message);
             return BadRequest("Unexpected error");
         }
     }
 
     [Authorize]
-    [HttpPost("send_test")]
-    public async Task<ActionResult> SendTestMessage([FromQuery(Name = "username")] string username)
+    [HttpGet("group/{group_id:int}")]
+    public async Task<IActionResult> GetGroupChat([FromRoute(Name = "group_id")] int id)
     {
         try
         {
-            var message = new MessageDTO { Content = "test" };
-            await _hubContext.Clients.User(username).ReceiveMessage(message);
-            return Ok("ok");
+            var messages = await _messageService.GetGroupChat(id);
+            return Ok(messages);
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogError("SendTestMessage failed with unexpected error : {}", e.Message);
+            _logger.LogError("Failed to get group chat for group {} with unexpected error: {}", id, e.Message);
             return BadRequest("Unexpected error");
         }
     }
 
     [Authorize]
-    [HttpPost("send_chat")]
-    public async Task<ActionResult> SendMessage([FromBody] MessageDTO message)
+    [HttpPost("user/message")]
+    public async Task<IActionResult> SendUserMessage([FromBody] UserMessageDTO message)
     {
-        if (!ModelState.IsValid)
-            return BadRequest("Model is invalid");
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (username != message.Sender.Username)
+            return BadRequest("You can only send messages as yourself");
         try
         {
-            if (message.Type == MessageType.GroupMessage)
-            {
-                // TODO: fix the name
-                var groupName = message.Receiver.Username;
-                var members = await _groupService.GetGroupMembers(groupName);
-
-                // Check if the sender is in the group
-                if (!members.Contains(username))
-                    return BadRequest("You are not in the group " + message.Receiver);
-
-                // Send messages to group members
-                await _hubContext.Clients.Group(groupName).ReceiveMessage(message);
-            }
-            else
-            {
-                var receiver = message.Receiver.Username;
-                if (!await _userService.UserExists(receiver))
-                {
-                    throw new ArgumentException("User " + receiver + " doesn't exist");
-                }
-                await _hubContext.Clients.User(receiver).ReceiveMessage(message);
-            }
-
+            var receiver = await _userService.GetUser(message.Receiver.Username);
+            await _hubContext.Clients.User(message.Receiver.Username).ReceiveUserMessage(message);
             var messageId = await _messageService.SaveMessage(message);
-            if (message.Type == MessageType.UserMessage)
-            {
-                _logger.LogInformation("User {} sent a message to user {}, message id {}", username, message.Content,
-                    message.Receiver, messageId);
-            }
-            else
-            {
-                _logger.LogInformation("User {} sent a message to group {}, message id {}", username, message.Content,
-                    message.Receiver, messageId);
-            }
-            return CreatedAtAction(nameof(SendMessage), new { Id = messageId });
+            _logger.LogInformation("User {} sent a message to user {}, message id {}", username,
+                message.Receiver, messageId);
+            return CreatedAtAction(nameof(SendUserMessage), new { Id = messageId });
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Failed to send message from {} to {} with the unexpected error: {}",
+                username, message.Receiver.Username, e.Message);
+            return BadRequest("Unexpected error");
+        }
+
+    }
+
+    [Authorize]
+    [HttpPost("group/message")]
+    public async Task<ActionResult> SendGroupMessage([FromBody] GroupMessageDTO message)
+    {
+
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (username != message.Sender.Username)
+            return BadRequest("You can only send messages as yourself");
+        try
+        {
+            var groupName = message.Receiver.Name;
+            var members = await _groupService.GetGroupMembers(message.Receiver.Id);
+
+            if (!members.Select(m => m.Username).Contains(username))
+                return BadRequest($"You are not in the group {groupName}");
+
+            await _hubContext.Clients.Group(groupName).ReceiveGroupMessage(message);
+            var messageId = await _messageService.SaveMessage(message);
+
+            _logger.LogInformation("User {} sent a message to group {}, message id {}", username,
+                groupName, messageId);
+
+            return CreatedAtAction(nameof(SendGroupMessage), new { Id = messageId });
         }
         catch (ArgumentException e)
         {

@@ -16,18 +16,19 @@ public class UserService : IUserService
 {
     private readonly ApplicationDbContext _dbContext;
     private const int ExpirationDay = 30;
-    private readonly string? _secretKey;
+    private readonly string? _secretKey = Environment.GetEnvironmentVariable("DEV_SECRET_KEY");
     private readonly UserManager<User> _userManager;
 
-    public UserService(ApplicationDbContext dbContext)
+    public UserService(ApplicationDbContext dbContext, UserManager<User> userManager)
     {
         _dbContext = dbContext;
+        _userManager = userManager;
     }
 
-    public async Task<IEnumerable<UserDTO>> GetAllUsers()
+    public async Task<IEnumerable<User>> GetAllUsers()
     {
         var users = await _dbContext.Users.ToListAsync();
-        return users.Select(u => u.ToDTO());
+        return users;
     }
 
     public async Task<bool> UserExists(string username)
@@ -36,14 +37,14 @@ public class UserService : IUserService
         return user != null;
     }
 
-    public async Task<UserDTO> GetUser(string username)
+    public async Task<User> GetUser(string username)
     {
         var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
         if (user == null)
         {
             throw new ArgumentException($"User {username} doesn't exist");
         }
-        return user.ToDTO();
+        return user;
     }
 
     /// <summary>

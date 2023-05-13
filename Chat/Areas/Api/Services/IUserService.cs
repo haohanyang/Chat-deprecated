@@ -1,4 +1,5 @@
 
+using Chat.Areas.Api.Models;
 using Chat.Common.DTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -6,9 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 namespace Chat.Areas.Api.Services;
 public interface IUserService
 {
-    public Task<IEnumerable<UserDTO>> GetAllUsers();
-    public Task<bool> UserExists(string username);
-    public Task<UserDTO> GetUser(string username);
+    public Task<IEnumerable<User>> GetAllUsers();
+    public Task<User> GetUser(string username);
     public Task<IdentityResult> Register(RegistrationRequest request);
 
     public Task<string> Login(LoginRequest request);

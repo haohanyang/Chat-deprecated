@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Chat.Common.DTOs;
 
-public class AuthenticationRequest
+public class RegistrationRequest
 {
     [Required]
     public string Username { get; set; } = null!;
