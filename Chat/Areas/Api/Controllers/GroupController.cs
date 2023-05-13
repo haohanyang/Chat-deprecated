@@ -26,15 +26,23 @@ public class GroupController : ControllerBase
         _connectionService = connectionService;
     }
 
+    /// <summary>
+    /// Get all groups
+    /// </summary>
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<GroupDTO>>> GetAllGroups()
+    public async IAsyncEnumerable<GroupDTO> GetAllGroups()
     {
         var groups = await _groupService.GetAllGroups();
-        return Ok(groups);
+        foreach (var group in groups)
+        {
+            yield return group;
+        }
     }
 
-
+    /// <summary>
+    /// Create a group
+    /// </summary>
     [Authorize]
     [HttpPost]
     public async Task<ActionResult> CreateGroup([FromBody] CreateGroupRequest request)
@@ -56,18 +64,20 @@ public class GroupController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError("Creating group {} failed with unknown error:{}", groupName, e.Message);
-            return BadRequest("Unknown error");
+            _logger.LogError("Creating group {} failed with unexpected error:{}", groupName, e.Message);
+            return BadRequest("unexpected error");
         }
     }
 
-
+    /// <summary>
+    /// Add the user to the group
+    /// </summary>
     [Authorize]
     [HttpPost("{group_id:int}/members")]
-    public async Task<ActionResult> JoinGroup([FromRoute(Name = "group_name")] int groupId)
+    public async Task<ActionResult> JoinGroup([FromRoute(Name = "group_id")] int groupId)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            return BadRequest("Invalid model");
 
         var username = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         try
@@ -84,7 +94,7 @@ public class GroupController : ControllerBase
             await _hubContext.Clients.Group(groupId.ToString()).ReceiveNotification(
                 new NotificationDTO
                 {
-                    Content = "User @{} joined the group",
+                    Content = "User {} joined the group",
                     Time = new DateTime()
                 });
 
@@ -97,12 +107,14 @@ public class GroupController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError("User {} failed to joining group {} with unknown error:{}", username, groupId, e.Message);
-            return BadRequest(e.Message);
+            _logger.LogError("User {} failed to join group {} with unexpected error:{}", username, groupId, e.Message);
+            return StatusCode(500, "Unexpected error");
         }
     }
 
-
+    /// <summary>
+    /// Remove the user from the group
+    /// </summary>
     [Authorize]
     [HttpDelete("{group_id:int}/members")]
     public async Task<ActionResult> LeaveGroup([FromRoute(Name = "group_id")] int groupId)
@@ -133,7 +145,7 @@ public class GroupController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError("User {} failed to leave the group {} with unknown error:{}", username, groupId, e.Message);
+            _logger.LogError("User {} failed to leave the group {} with unexpected error:{}", username, groupId, e.Message);
             return BadRequest(e.Message);
         }
     }

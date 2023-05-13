@@ -2,7 +2,6 @@ using System.Security.Authentication;
 using System.Security.Claims;
 using Chat.Areas.Api.Services;
 using Chat.Common.DTOs;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chat.Areas.Api.Controllers;
@@ -21,18 +20,23 @@ public class AuthenticationController : ControllerBase
         _logger = logger;
     }
 
-
+    /// <summary>
+    /// Get the current user's username
+    /// </summary>
     [HttpGet]
-    public string Index()
+    public ActionResult<string> GetUsername()
     {
         var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (username == null)
         {
-            return "You haven't logged in";
+            return Unauthorized("You haven't logged in");
         }
-        return "Hello " + username;
+        return username;
     }
 
+    /// <summary>
+    /// Register a new user
+    /// </summary>
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegistrationRequest request)
     {
@@ -57,16 +61,18 @@ public class AuthenticationController : ControllerBase
         }
         catch (ArgumentException e)
         {
-            // User already exists
             return BadRequest(e.Message);
         }
         catch (Exception e)
         {
-            _logger.LogError("Login {} with unknown error:{}", request.Username, e.Message);
-            return BadRequest("Unexpected error");
+            _logger.LogError("Register user {} failed with unexpected error:{}", request.Username, e.Message);
+            return StatusCode(500, "Unexpected error");
         }
     }
 
+    /// <summary>
+    /// Login with username and password
+    /// </summary>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -88,11 +94,14 @@ public class AuthenticationController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError("Login {} with unknown error: {}", request.Username, e.Message);
+            _logger.LogError("Login {} with unexpected error: {}", request.Username, e.Message);
             return BadRequest("Unexpected error");
         }
     }
 
+    /// <summary>
+    /// Validate a token
+    /// </summary>
     [HttpGet("validate")]
     public async Task<IActionResult> Validate([FromQuery(Name = "token")] string token)
     {
@@ -109,7 +118,7 @@ public class AuthenticationController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError("Failed to verify token with unknown error: {}", e.Message);
+            _logger.LogError("Failed to verify token with unexpected error: {}", e.Message);
             return BadRequest("Unexpected error");
         }
 

@@ -23,7 +23,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    /// Get the logged-in user
+    /// Get the current logged-in user
     /// </summary> 
     [Authorize]
     [HttpGet("me")]
@@ -46,6 +46,9 @@ public class UserController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Get the user's profile
+    /// </summary>
     [HttpGet("{username}")]
     public async Task<IActionResult> GetUser([FromRoute(Name = "username")] string username)
     {
@@ -69,10 +72,13 @@ public class UserController : ControllerBase
     [HttpPut("{username}")]
     public IActionResult UpdateUser([FromBody] UserDTO user, [FromRoute] string username)
     {
-        // TODO: implement
-        return Ok("ok");
+        throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Get all users
+    /// </summary>
+    [Authorize]
     [HttpGet]
     public async IAsyncEnumerable<UserDTO> GetAllUsers()
     {
@@ -83,6 +89,9 @@ public class UserController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Get all groups that the user has joined
+    /// </summary>
     [Authorize]
     [HttpGet("{username}/groups")]
     public async Task<IActionResult> GetJoinedGroups([FromRoute] string username)

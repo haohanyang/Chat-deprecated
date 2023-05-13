@@ -29,7 +29,7 @@ public class ChatController : ControllerBase
     }
 
     /// <summary>
-    /// Get the chat between the current user and the user with the given username
+    /// Get all messages between the current user and another user with the given username
     /// </summary>
     [Authorize]
     [HttpGet("user/{username1}/{username2}")]
@@ -55,6 +55,9 @@ public class ChatController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Get all messages of the group
+    /// </summary>
     [Authorize]
     [HttpGet("group/{group_id:int}")]
     public async Task<IActionResult> GetGroupChat([FromRoute(Name = "group_id")] int id)
@@ -75,6 +78,9 @@ public class ChatController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Send a message to another user
+    /// </summary>
     [Authorize]
     [HttpPost("user/message")]
     public async Task<IActionResult> SendUserMessage([FromBody] UserMessageDTO message)
@@ -104,6 +110,9 @@ public class ChatController : ControllerBase
 
     }
 
+    /// <summary>
+    /// Send a message to a group
+    /// </summary>
     [Authorize]
     [HttpPost("group/message")]
     public async Task<ActionResult> SendGroupMessage([FromBody] GroupMessageDTO message)

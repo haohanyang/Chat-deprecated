@@ -69,13 +69,13 @@ public class GroupService : IGroupService
             .FirstOrDefaultAsync(e => e.Id == groupId);
 
         if (user == null)
-            throw new ArgumentException("User " + username + " doesn't exist");
+            throw new ArgumentException($"User {username} doesn't exist");
 
         if (group == null)
-            throw new ArgumentException("Group " + groupId + " doesn't exist");
+            throw new ArgumentException($"Group {groupId} doesn't exist");
 
         if (!UserInGroup(user, group))
-            throw new ArgumentException("User " + username + " is not in group " + groupId);
+            throw new ArgumentException($"User {username} is not in group {groupId}");
 
         var membership = await _dbContext.Memberships.FirstOrDefaultAsync(e => e.UserId == user.Id && e.GroupId == group.Id);
         _dbContext.Remove(membership!);
@@ -88,7 +88,7 @@ public class GroupService : IGroupService
         var group = await _dbContext.Groups.Include(e => e.Memberships).ThenInclude(e => e.User)
             .FirstOrDefaultAsync(e => e.Id == groupId);
         if (group == null)
-            throw new ArgumentException("Group " + groupId + " doesn't exist");
+            throw new ArgumentException($"Group {groupId} doesn't exist");
 
         return group.Memberships.Select(e => e.User.ToDto());
     }
@@ -98,7 +98,7 @@ public class GroupService : IGroupService
         var user = await _dbContext.Users.Include(e => e.Memberships).ThenInclude(m => m.Group)
             .FirstOrDefaultAsync(e => e.UserName == username);
         if (user == null)
-            throw new ArgumentException("User " + username + " doesn't exist");
+            throw new ArgumentException($"User {username} doesn't exist");
 
         return user.Memberships.Select(e => e.Group.ToDto());
     }
@@ -108,7 +108,7 @@ public class GroupService : IGroupService
         var groupId = group.Id;
         return (
             from membership in user.Memberships
-            where membership.GroupId == groupId
+            where membership.GroupId == groupId || membership.UserId == user.Id
             select membership.Id).Any();
     }
 
@@ -123,7 +123,7 @@ public class GroupService : IGroupService
     {
         var group = await _dbContext.Groups.Include(e => e.Owner).FirstOrDefaultAsync(e => e.Id == groupId);
         if (group == null)
-            throw new ArgumentException("Group " + groupId + " doesn't exist");
+            throw new ArgumentException($"Group {groupId} doesn't exist");
 
         return group.ToDto();
     }
