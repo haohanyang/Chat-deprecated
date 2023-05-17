@@ -6,35 +6,35 @@
 }
 
 @section Header {
-    @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { LoggedInUser = Model.LoggedInUser })
+@await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { CurrentUser = Model.CurrentUser })
 }
 
 @section Scripts {
-    @if (Model.LoggedInUser != null)
-    {
-        <script src="_framework/blazor.webassembly.js"></script>
+@if (Model.CurrentUser != null)
+{
+<script src="_framework/blazor.webassembly.js"></script>
+}
+<script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
+<script>
+    const popoverTriggerList = document.querySelectorAll('#gg')
+    const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+
+    const pickerOptions = { onEmojiSelect: console.log }
+    const picker = new EmojiMart.Picker(pickerOptions)
+
+    window.AddEmojiPopover = (element) => {
+        const popover = new bootstrap.Popover(element, {
+            html: true,
+            content: picker
+        })
     }
-    <script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
-    <script>
-        const popoverTriggerList = document.querySelectorAll('#gg')
-        const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
-
-        const pickerOptions = { onEmojiSelect: console.log }
-        const picker = new EmojiMart.Picker(pickerOptions)
-
-        window.AddEmojiPopover = (element) => {
-            const popover = new bootstrap.Popover(element, {
-                html: true,
-                content: picker
-            })
-        }
-        window.ScrollDownToChatBottom = () => {
-            $(".chat-message-box").scrollTop($(".chat-message-box").prop("scrollHeight"));
-        }
-    </script>
+    window.ScrollDownToChatBottom = () => {
+        $(".chat-message-box").scrollTop($(".chat-message-box").prop("scrollHeight"));
+    }
+</script>
 }
 
-@if (Model.LoggedInUser != null)
+@if (Model.CurrentUser != null)
 {
     <main id="chat" role="main" class="container">
     <div class="spinner-border loading-progress" role="status">

@@ -29,9 +29,9 @@ public class HomeController : Controller
             model.RedirectMessage = JsonSerializer.Deserialize<RedirectMessage>((string)TempData["RedirectMessage"]!);
         }
 
-        if (TempData["loggedInUser"] != null)
+        if (TempData["CurrentUser"] != null)
         {
-            model.LoggedInUser = JsonSerializer.Deserialize<UserDTO>((string)TempData["loggedInUser"]!);
+            model.CurrentUser = JsonSerializer.Deserialize<UserDTO>((string)TempData["CurrentUser"]!);
         }
 
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -40,7 +40,7 @@ public class HomeController : Controller
             try
             {
                 var user = await _userService.GetUser(username);
-                model.LoggedInUser = user.ToDto();
+                model.CurrentUser = user.ToDto();
             }
             catch (Exception e)
             {

@@ -5,74 +5,68 @@
 }
 
 @section Header {
-    @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { LoggedInUser = Model.LoggedInUser })
+    @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { CurrentUser = Model.CurrentUser })
 }
 
-@section Scripts {
-    <script>
-        $("document").ready(function () {
-            let fields = ["username", "password"];
-            fields.forEach((field) => {
-                if ($("#login-" + field + "-input-feedback").text().trim() != "") {
-                    $("#login-" + field + "-input").addClass("is-invalid");
-                }
-            })
-        });
-    </script>
-}
+<div class="content-wrapper login-page">
 
-<main role="main" class="container">
 
-    @if (Model.LoggedInUser != null)
-    {
-        <div class="alert alert-danger" role="alert">
-            @Model.Error
-        </div>
-    }
-    else
-    {
-        <form asp-area="WebPage" asp-asp-controller="Auth" asp-action="Login" class="form-auth border rounded">
-            <div class="text-center">
-                <img class="mb-4" src="https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg" alt="" width="72"
-                    height="72">
-            </div>
-
-            <h1 class="h3 mb-3 font-weight-normal text-center">Please sign in</h1>
-
-            <div class="container">
-                <label for="login-username-input" class="form-label">Username</label>
-                <input asp-for="Username" type="text" class="form-control" id="login-username-input"
-                    aria-describedby="login-username-feedback" required>
-                <span asp-validation-for="Username" id="login-username-input-feedback" class="invalid-feedback">
-                </span>
-            </div>
-
-            <div class="container">
-                <label for="login-password-input" class="form-label">Password</label>
-                <input asp-for="Password" type="password" class="form-control" id="login-password-input"
-                    aria-describedby="login-password-input-feedback" required>
-                <span asp-validation-for="Password" id="login-password-input-feedback" class="invalid-feedback">
-                </span>
-            </div>
-
-            <div class="container">
-                Don't have an account?
-                <a asp-area="WebPage" asp-controller="Auth" asp-action="Register">Create an account
-                </a>
-            </div>
-
-            <div class="container text-center pt-2 pb-2">
-                <input type="submit" class="btn btn-outline-primary login-button" value="Log in" />
-            </div>
-
-            @if (Model.Error != null)
+    <div class="content">
+        <div class="container">
+            @if (Model.CurrentUser != null)
             {
-                <div class="container pt-2">
-                    <div class="alert alert-danger" role="alert">
-                        @Model.Error
-                    </div>
+                <div class="alert alert-danger" role="alert">
+                    @Model.Error
                 </div>
             }
-        </form>
-    }
-</main>
+            else
+            {
+                <div class="card login-box">
+                    <div class="card-body login-card-body">
+                        <h4 class="login-box-msg">Log in</h4>
+                        <form asp-area="WebPage" asp-asp-controller="Auth" asp-action="Login" method="post">
+                            <div class="input-group mb-3">
+                                <input asp-for="Username" type="text" class="form-control" placeholder="Username">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">
+                                        <i class="bi bi-person-circle"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group mb-3">
+                                <input type="password" class="form-control" placeholder="Password">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">
+                                        <i class="bi bi-lock-fill"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <input type="submit" class="btn btn-primary btn-block" value="Log in" />
+                            </div>
+                            @if (Model.Error != null)
+                            {
+                                <div class="mt-2">
+                                    <div class="alert alert-danger" role="alert">
+                                        @Model.Error
+                                    </div>
+                                </div>
+                            }
+                        </form>
+
+                        <p class="mb-1 mt-1">
+                            <a href="#">I forgot my password</a>
+                        </p>
+                        <p class="mb-0">
+                            <a asp-area="WebPage" asp-controller="Auth" asp-action="Register" class="text-center">Create a
+                                new account</a>
+                        </p>
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    </div>
+
+</div>

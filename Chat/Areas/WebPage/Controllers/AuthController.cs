@@ -41,7 +41,7 @@ public class AuthController : Controller
                 SameSite = SameSiteMode.Strict
             });
 
-            TempData["loggedInUser"] = JsonSerializer.Serialize(new UserDTO { Username = model.Username });
+            TempData["CurrentUser"] = JsonSerializer.Serialize(new UserDTO { Username = model.Username });
             return RedirectToAction("Index", "Home");
         }
 
@@ -67,7 +67,7 @@ public class AuthController : Controller
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (username != null)
         {
-            model.LoggedInUser = new UserDTO { Username = username };
+            model.CurrentUser = new UserDTO { Username = username };
             model.Error = "You are already logged in.";
         }
         return View(model);

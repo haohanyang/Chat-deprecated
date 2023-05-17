@@ -5,13 +5,13 @@
 }
 
 @section Header {
-    @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { LoggedInUser = Model.LoggedInUser })
+    @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { CurrentUser = Model.CurrentUser })
 }
 
 @section Scripts {
     <script>
         $("document").ready(function () {
-            let fields = ["first-name", "last-name", "email", "username", "password"];
+            let fields = ["firstname", "lastname", "email", "username", "password"];
             fields.forEach((field) => {
                 if ($("#register-" + field + "-input-feedback").text().trim() != "") {
                     $("#register-" + field + "-input").addClass("is-invalid");
@@ -21,84 +21,85 @@
     </script>
 }
 
-<main role="main" class="container">
-    <form asp-area="WebPage" asp-controller="Auth" asp-action="Register" method="post" class="form-auth border rounded">
-        <div class="text-center">
-            <img class="mb-4" src="https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg" alt="" width="72"
-                height="72">
-        </div>
 
-        <h1 class="h3 mb-3 font-weight-normal text-center">Register</h1>
-
-        <div class="container row justify-content-between">
-            <div class="col-12 col-sm-6">
-                <label for="register-first-name-input" class="form-label">First name</label>
-                <input asp-for="FirstName" type="text" class="form-control" id="register-first-name-input"
-                    aria-describedby="register-first-name-input-feedback" required>
-                <span asp-validation-for="FirstName" id="register-first-name-input-feedback" class="invalid-feedback">
-                </span>
-            </div>
-
-            <div class="col-12 col-sm-6 pr-0">
-                <label for="register-last-name-input" class="form-label">Last name</label>
-                <input asp-for="LastName" type="text" class="form-control" id="register-last-name-input"
-                    aria-describedby="register-last-name-input-feedback" required>
-                <span asp-validation-for="LastName" id="register-last-name-input-feedback" class="invalid-feedback">
-                </span>
-            </div>
-        </div>
-
+<div class="content-wrapper register-page">
+    <div class="content">
         <div class="container">
-            <label for="register-email-input" class="form-label">Email</label>
-            <input asp-for="Email" type="email" class="form-control" id="register-email-input"
-                aria-describedby="register-email-input-feedback" required>
-            <span asp-validation-for="Email" id="register-email-input-feedback" class="invalid-feedback">
-            </span>
-        </div>
+            <div class="card register-box">
+                <div class="card-body register-card-body">
+                    <h4 class="register-box-msg">Create a new account</h4>
+                    <form method="post" asp-area="WebPage" asp-controller="Auth" asp-action="Register">
+                        <div class="row">
+                            <div class="form-group mb-3 col">
+                                <input asp-for="FirstName" type="text" class="form-control" placeholder="First name"
+                                    id="register-firstname-input">
+                                <span asp-validation-for="FirstName" class="invalid-feedback"
+                                    id="register-firstname-input-feedback"></span>
+                            </div>
+                            <div class="form-group mb-3 col">
+                                <input asp-for="LastName" type="text" class="form-control" placeholder="Last name"
+                                    id="register-lastname-input">
+                                <span asp-validation-for="LastName" class="invalid-feedback"
+                                    id="register-lastname-input-feedback"></span>
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input asp-for="Username" type="text" class="form-control" placeholder="Username"
+                                id="register-username-input">
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                            </div>
+                            <span asp-validation-for="Username" id="register-username-input-feedback"
+                                class="invalid-feedback"></span>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input asp-for="Email" type="email" class="form-control" placeholder="Email"
+                                id="register-email-input">
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <i class="bi bi-envelope-fill"></i>
+                                </div>
+                            </div>
+                            <span asp-validation-for="Email" id="register-email-input-feedback"
+                                class="invalid-feedback"></span>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input asp-for="Password" type="password" class="form-control" placeholder="Password"
+                                id="register-password-input">
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <i class="bi bi-lock-fill"></i>
+                                </div>
+                            </div>
+                            <span asp-validation-for="Password" id="register-password-input-feedback"
+                                class="invalid-feedback"></span>
+                        </div>
 
-        <div class="container">
-            <label for="register-username-input" class="form-label">Username</label>
-            <input asp-for="Username" type="text" class="form-control" id="register-username-input"
-                aria-describedby="register-username-input-feedback" required>
-            <span asp-validation-for="Username" id="register-username-input-feedback" class="invalid-feedback">
-            </span>
-        </div>
+                        <div class="input-group">
+                            <input type="submit" class="btn btn-primary btn-block" value="Register" />
+                        </div>
 
-        <div class="container">
-            <label for="register-password-input" class="form-label">Password</label>
-            <input asp-for="Password" type="password" class="form-control" id="register-password-input"
-                aria-describedby="register-password-input-feedback" required>
-            <span asp-validation-for="Password" id="register-password-input-feedback" class="invalid-feedback">
-            </span>
-        </div>
-
-        <div class="container">
-            Already have an account ? <a asp-area="WebPage" asp-controller="Auth" asp-action="Login">Login</a>
-        </div>
-
-        <div class="container text-center pt-2 pb-2">
-            <input type="submit" class="btn btn-outline-primary register-button" value="Register" />
-        </div>
-
-        @if (Model.Errors.Count > 0)
-        {
-            <div class="container pt-2">
-                <div class="alert alert-danger" role="alert">
-                    @if (Model.Errors.Count == 1)
-                    {
-                        @Model.Errors[0]
-                    }
-                    else
-                    {
-                        <ul>
-                            @foreach (var error in Model.Errors)
-                            {
-                                <li>@error</li>
-                            }
-                        </ul>
-                    }
+                        @if (Model.Errors.Count > 0)
+                        {
+                            <div class="mt-2">
+                                <div class="alert alert-danger" role="alert">
+                                    @Model.Errors[0]
+                                </div>
+                            </div>
+                        }
+                    </form>
+                    <!-- /.social-auth-links -->
+                    <p class="mb-0 mt-1">
+                        <a asp-area="WebPage" asp-controller="Auth" asp-action="Login" class="text-center">Log in
+                            with account</a>
+                    </p>
                 </div>
+                <!-- /.register-card-body -->
             </div>
-        }
-    </form>
-</main>
+            <!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content -->
+</div>
