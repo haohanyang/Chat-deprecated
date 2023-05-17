@@ -34,7 +34,7 @@
                                 </div>
                             </div>
                             <div class="input-group mb-3">
-                                <input type="password" class="form-control" placeholder="Password">
+                                <input asp-for="Password" type="password" class="form-control" placeholder="Password">
                                 <div class="input-group-append">
                                     <div class="input-group-text">
                                         <i class="bi bi-lock-fill"></i>
@@ -42,7 +42,7 @@
                                 </div>
                             </div>
                             <div class="input-group">
-                                <input type="submit" class="btn btn-primary btn-block" value="Log in" />
+                                <input type="submit" class="form-control btn btn-primary btn-block" value="Log in" />
                             </div>
                             @if (Model.Error != null)
                             {

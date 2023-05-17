@@ -94,6 +94,11 @@ public class AuthController : Controller
     public IActionResult Register()
     {
         var model = new RegisterViewModel();
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (username != null)
+        {
+            model.CurrentUser = new UserDTO { Username = username };
+        }
         return View(model);
     }
 
