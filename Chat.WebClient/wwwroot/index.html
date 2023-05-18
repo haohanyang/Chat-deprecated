@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width">
+    <title>Chat</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/haohanyang/AdminLTE@release/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/haohanyang/AdminLTE@release/dist/css/adminlte.min.css">
+    <style>
+        .chat-body {
+            height: calc(100vh - 62px - 49px - 59px);
+        }
+
+        .direct-chat-messages {
+            height: auto;
+        }
+
+        .direct-chat-contacts {
+            height: auto;
+        }
+
+        .writing-spinner {
+            height: 10px;
+            width: 10px;
+        }
+    </style>
+
+</head>
+
+<body class="hold-transition sidebar-min">
+    <div id="chat">Loading...</div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/haohanyang/AdminLTE@release/plugins/jquery/jquery.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/gh/haohanyang/AdminLTE@release/plugins/bootstrap/js/bootstrap.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/haohanyang/AdminLTE@release/dist/js/adminlte.js"></script>
+    <script>
+        window.InitTreeView = () => {
+            $('[data-widget="treeview"]').Treeview('init');
+        }
+    </script>
+</body>
+
+</html>

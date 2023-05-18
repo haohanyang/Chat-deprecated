@@ -1,0 +1,107 @@
+@using Chat.Common.DTOs;
+@using Chat.WebClient.Services;
+@inject IHttpService HttpService;
+
+<li class="nav-item">
+    <a href="#" class="nav-link">
+        <i class="nav-icon fas fa-tachometer-alt"></i>
+        @if (_isLoading || _errorMessage != null)
+        {
+            <p>
+                Groups
+                <i class="right fas fa-angle-left"></i>
+            </p>
+        }
+        else
+        {
+            <p>
+                Groups(@GroupChats.Count)
+                <i class="right fas fa-angle-left"></i>
+            </p>
+        }
+    </a>
+    <ul class="nav nav-treeview">
+
+        @if (_isLoading)
+        {
+            <li class="nav-item text-center">
+                <div class="spinner-border text-light my-2" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </li>
+        }
+        else if (_errorMessage != null)
+        {
+            <li class="nav-item">
+                <div class="alert alert-danger" role="alert">
+                    @_errorMessage
+                </div>
+            </li>
+
+        }
+        else
+        {
+            @foreach (var (_, v) in GroupChats)
+            {
+                var group = v.Item1;
+                var messages = v.Item2;
+                var unreadMessagesCount = messages.Where(e => !e.WasRead).ToList().Count;
+
+                <li class="nav-item">
+                    <div class="user-panel mt-2 pb-1 mb-2 d-flex">
+                        <div class="image">
+                            <img src="@group.AvatarUrl" class="img-circle elevation-2" alt="User Image">
+                        </div>
+                        <div class="info">
+                            <a href="#" class="d-block">"@group.Name"</a>
+                        </div>
+                        @if (unreadMessagesCount > 0)
+                        {
+                            <span class="badge badge-danger align-self-center ml-auto mr-1">3</span>
+                        }
+                    </div>
+                </li>
+            }
+        }
+    </ul>
+</li>
+
+@code {
+
+    [CascadingParameter]
+    public UserDTO CurrentUser { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<int> SetGroupContactCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<(int, GroupDTO)> AddGroupContactCallback { get; set; }
+
+    [Parameter]
+    public Dictionary<int, (GroupDTO, List<GroupMessageDTO>)> GroupChats { get; set; } = new();
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            var groupContacts = await HttpService.GetAllGroupContacts(CurrentUser.Username);
+            foreach (var groupContact in groupContacts)
+            {
+                await AddGroupContactCallback.InvokeAsync((groupContact.Id, groupContact));
+            }
+        }
+        catch (Exception e)
+        {
+            _errorMessage = e.Message;
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

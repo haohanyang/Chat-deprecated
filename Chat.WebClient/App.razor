@@ -3,8 +3,10 @@
 @using Chat.WebClient.Components;
 @using Microsoft.AspNetCore.SignalR.Client;
 @inject IHttpService HttpService;
+@inject IJSRuntime JS
+@using System.Runtime.InteropServices.JavaScript
 
-<div class="row">
+<div class="wrapper">
     @if (_loading)
     {
         <div class="spinner-border" role="status">
@@ -14,46 +16,31 @@
     {
         @if (_error == null)
         {
-            <div class="col-md-12">
-                <div class="card chat-card bg-light">
-                    <div class="card-body">
-                        <div class="row">
-                            <CascadingValue Value="_currentUser">
-                                @* Left *@
-                                <ContactList UserChats="_userChats" GroupChats="_groupChats" AddUserContactCallback="AddUserContact"
-                                    AddGroupContactCallback="AddGroupContact" SetUserContactCallback="SetUserContact"
-                                    SetGroupContactCallback="SetGroupContact">
-                                </ContactList>
-                                 @* Right *@
-                                 <div class="col-md-6 col-lg-7 col-xl-8 chat-right">
-                                     <ContactStatus CurrentContact=@_currentContact />
-                                      @if (_currentContact is UserDTO contact)
-                                    {
-                                        var (_, chats) = _userChats[contact.Username];
-                                        <ChatBox Chats="chats.Cast<MessageDTO>().ToList()" CurrentContact="_currentContact"
-                                            AddGroupMessage="AddGroupMessage" AddUserMessage="AddUserMessage"
-                                            SetGroupMessages="SetGroupMessages" SetUserMessages="SetUserMessages">
-                                        </ChatBox>
-                                    }
-                                    else if (_currentContact is GroupDTO groupDto)
-                                    {
-                                        var (_, chats) = _groupChats[groupDto.Id];
-                                        <ChatBox Chats="chats.Cast<MessageDTO>().ToList()" CurrentContact="_currentContact"
-                                            AddGroupMessage="AddGroupMessage" AddUserMessage="AddUserMessage"
-                                            SetGroupMessages="SetGroupMessages" SetUserMessages="SetUserMessages">
-                                        </ChatBox>
-                                    }
+            <CascadingValue Value="_currentUser">
+                <NavBar />
+                <ContactList UserChats="_userChats" GroupChats="_groupChats" AddUserContactCallback="AddUserContact"
+                    AddGroupContactCallback="AddGroupContact" SetUserContactCallback="SetUserContact"
+                    SetGroupContactCallback="SetGroupContact" />
 
-                                 </div>
-                                    <CreateGroupModal>
-                                    </CreateGroupModal>
-                                    <JoinGroupModal>
-                                    </JoinGroupModal>
-                            </CascadingValue>
-                        </div>
-                    </div>
+                <div class="content-wrapper">
+                    @if (_currentContact is UserDTO contact)
+                    {
+                        var (_, chats) = _userChats[contact.Username];
+                        <ChatBox Chats="chats.Cast<MessageDTO>().ToList()" CurrentContact="_currentContact"
+                            AddGroupMessage="AddGroupMessage" AddUserMessage="AddUserMessage" SetGroupMessages="SetGroupMessages"
+                            SetUserMessages="SetUserMessages">
+                        </ChatBox>
+                    }
+                    else if (_currentContact is GroupDTO groupDto)
+                    {
+                        var (_, chats) = _groupChats[groupDto.Id];
+                        <ChatBox Chats="chats.Cast<MessageDTO>().ToList()" CurrentContact="_currentContact"
+                            AddGroupMessage="AddGroupMessage" AddUserMessage="AddUserMessage" SetGroupMessages="SetGroupMessages"
+                            SetUserMessages="SetUserMessages">
+                        </ChatBox>
+                    }
                 </div>
-            </div>
+            </CascadingValue>
         }
         else
         {
@@ -104,7 +91,7 @@
                 this.StateHasChanged();
             });
 
-            await _hubConnection.StartAsync();
+            // await _hubConnection.StartAsync();
         }
         catch (Exception e)
         {

@@ -1,0 +1,119 @@
+@using Chat.Common.DTOs;
+@using Chat.WebClient.Services;
+@inject IHttpService HttpService;
+
+<li class="nav-item">
+    <a href="#" class="nav-link">
+        <i class="nav-icon fas fa-tachometer-alt"></i>
+        @if (_isLoading || _errorMessage != null)
+        {
+            <p>
+                Friends
+                <i class="right fas fa-angle-left"></i>
+            </p>
+        }
+        else
+        {
+            <p>
+                Friends(@UserChats.Count)
+                <i class="right fas fa-angle-left"></i>
+            </p>
+        }
+    </a>
+    <ul class="nav nav-treeview">
+        @if (_isLoading)
+        {
+            <li class="nav-item text-center">
+                <div class="spinner-border text-light my-2" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </li>
+        }
+        else if (_errorMessage != null)
+        {
+            <li class="nav-item">
+                <div class="alert alert-danger" role="alert">
+                    @_errorMessage
+                </div>
+            </li>
+        }
+        else
+        {
+            @foreach (var (_, v) in UserChats)
+            {
+                var contact = v.Item1;
+                var messages = v.Item2;
+                var unreadMessagesCount = messages.Where(e => !e.WasRead).ToList().Count;
+                if (contact.Username != CurrentUser.Username)
+                {
+                    <li class="nav-item">
+                        <div class="user-panel mt-2 pb-1 mb-2 d-flex align-items-center"
+                        @onclick="() => SetUserContactCallback.InvokeAsync(contact.Username)">
+                            <div class="image">
+                                <img src="@contact.AvatarUrl" class="img-circle elevation-2" alt="User Image">
+                            </div>
+                            <div class="info">
+                                <a href="#" class="d-block">@contact.Name</a>
+                                @if (contact.IsOnline)
+                                {
+                                    <span class="badge badge-success">Online</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">Offline</span>
+                                }
+                            </div>
+                            @if (unreadMessagesCount > 0)
+                            {
+                                <span class="badge badge-danger align-self-center ml-auto mr-1">
+                                    @messages.Where(e =>!e.WasRead).ToList().Count
+                                </span>
+                            }
+
+                        </div>
+                    </li>
+                }
+            }
+        }
+
+    </ul>
+</li>
+@code {
+    [CascadingParameter]
+    public UserDTO CurrentUser { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<string> SetUserContactCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<(string, UserDTO)> AddUserContactCallback { get; set; }
+
+    [Parameter]
+    public Dictionary<string, (UserDTO, List<UserMessageDTO>)> UserChats { get; set; } = new();
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            var userContacts = await HttpService.GetAllUserContacts();
+            foreach (var userContact in userContacts)
+            {
+                await AddUserContactCallback.InvokeAsync((userContact.Username, userContact));
+            }
+        }
+        catch (Exception e)
+        {
+            _errorMessage = e.Message;
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+

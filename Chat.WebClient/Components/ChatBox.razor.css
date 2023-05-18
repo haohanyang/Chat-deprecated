@@ -1,9 +1,0 @@
-.chat-message-box {
-    height: 450px;
-    overflow: auto;
-    scrollbar-width: thin;
-}
-
-.message-input {
-    height: 50px;
-}

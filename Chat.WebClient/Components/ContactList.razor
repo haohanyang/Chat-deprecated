@@ -1,56 +1,62 @@
 @using Chat.Common.DTOs
-<div class="col-md-6 col-lg-5 col-xl-4 chat-left">
-    <div class="chat-contact-search pt-2">
-        <div class="input-group">
-            <input type="text" class="form-control" aria-label="Contact's name" aria-describedby="search-button-addon">
-            <button class="btn btn-outline-secondary" type="button" id="search-button-addon">
-                <i class="bi bi-search">
-                </i>
-            </button>
-        </div>
-    </div>
+@inject IJSRuntime JS;
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="index3.html" class="brand-link">
+        <img src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png" alt="AdminLTE Logo"
+            class="brand-image img-circle elevation-3" style="opacity: .8">
+        <span class="brand-text font-weight-light">Chat</span>
+    </a>
 
-    <div class="accordion contact-list">
-        <div class="accordion-item">
-            <h2 class="accordion-header">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne"
-                    aria-expanded="true" aria-controls="collapseOne">
-                    Users
-                </button>
-            </h2>
-            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#contact-list">
-                <div class="accordion-body p-0">
-                    <div class="card user-contact-list border-0">
-                        <UserContactList AddUserContactCallback="AddUserContactCallback"
-                            SetUserContactCallback="SetUserContactCallback" UserChats="UserChats">
-                        </UserContactList>
-                    </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Sidebar user panel (optional) -->
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <img src="@CurrentUser.AvatarUrl" class="img-circle elevation-2" alt="User Image">
+            </div>
+            <div class="info">
+                <a href="#" class="d-block">@CurrentUser.Name</a>
+            </div>
+        </div>
+
+        <!-- SidebarSearch Form -->
+        <div class="form-inline">
+            <div class="input-group" data-widget="sidebar-search">
+                <input class="form-control form-control-sidebar" type="search" placeholder="Search" aria-label="Search">
+                <div class="input-group-append">
+                    <button class="btn btn-sidebar">
+                        <i class="fas fa-search fa-fw"></i>
+                    </button>
                 </div>
             </div>
         </div>
-        <div class="accordion-item">
-            <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                    Groups
-                </button>
-            </h2>
-            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#contact-list">
-                <div class="accordion-body p-0">
-                    <div class="card group-contact-list border-0">
-                        <ul class="list-group list-group-flush">
-                            <GroupContactList SetGroupContactCallback="SetGroupContactCallback"
-                                AddGroupContactCallback="AddGroupContactCallback" GroupChats="GroupChats">
-                            </GroupContactList>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                <FriendList AddUserContactCallback="AddUserContactCallback"
+                    SetUserContactCallback="SetUserContactCallback" UserChats="UserChats" />
+
+                <GroupList SetGroupContactCallback="SetGroupContactCallback"
+                    AddGroupContactCallback="AddGroupContactCallback" GroupChats="GroupChats" />
+            </ul>
+        </nav>
     </div>
-</div>
+</aside>
 
 @code {
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("InitTreeView");
+        }
+    }
+
+    [CascadingParameter]
+    public UserDTO CurrentUser { get; set; } = new();
 
     [Parameter]
     public EventCallback<string> OnClickContactCallback { get; set; }
