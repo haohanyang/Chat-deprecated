@@ -16,7 +16,7 @@
                     }
                     else
                     {
-                        <span class="badge bg-secondary">Offline</span>
+                        <span class="badge bg-secondary ml-1">Offline</span>
                     }
                 }
                 else if (CurrentContact is GroupDTO group_)
@@ -28,7 +28,7 @@
                     <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-toggle="tooltip" title="Contacts"
                         data-widget="chat-pane-toggle">
-                        <i class="fas fa-comments"></i>
+                        <i class="bi bi-people-fill"></i>
                     </button>
                 </div>
                 }
@@ -57,7 +57,7 @@
                             {
                                 <div class="direct-chat-msg px-2">
                                     <img class="direct-chat-img" src="@message.Sender.AvatarUrl" alt="avatar">
-                                    <div class="direct-chat-text bg-primary border-0">
+                                    <div class="direct-chat-text">
                                         <span class="text-bold">@message.Sender.Name</span>
                                         <p class="mb-0">@message.Content</p>
                                         <span class="float-right text-muted mt-2">@message.Time.ToString("dd MMMM H:mm")</span>
@@ -68,7 +68,7 @@
                             {
                                 <div class="direct-chat-msg right">
                                     <img class="direct-chat-img" src="@message.Sender.AvatarUrl" alt="avatar">
-                                    <div class="direct-chat-text">
+                                    <div class="direct-chat-text bg-primary border-0">
                                         <p class="text-right text-bold mb-0">@message.Sender.Name</p>
                                         <p class="text-right mb-0">@message.Content</p>
                                         <span class="float-left text-muted mt-2">@message.Time.ToString("dd MMMM H:mm")</span>
@@ -116,13 +116,15 @@
             <div class="card-footer">
                 <form action="#" method="post">
                     <div class="input-group">
-                        <input type="text" name="message" placeholder="Type Message ..." class="form-control">
+                        <input type="text" name="message" placeholder="Type Message ..." class="form-control"
+                        @bind="@_input">
                         <span class="input-group-append">
                             @{
-                                var sendButtonClass = "btn btn-primary" + (_sending || _loading || _input == string.Empty ?
+                                var sendButtonClass = "btn btn-primary" + (_sending || _loading ?
                                 "disabled" : "");
                             }
-                            <button type="button" class="@sendButtonClass" @onclick="@SendMessage">Send</button>
+                            <input type="submit" class="form-control @sendButtonClass" @onclick:preventDefault="true"
+                            @onclick="@SendMessage" value="Send" />
                         </span>
                     </div>
                 </form>
@@ -206,6 +208,7 @@
     {
         if (_input == string.Empty)
         {
+            Console.WriteLine("Empty message");
             return;
         }
 

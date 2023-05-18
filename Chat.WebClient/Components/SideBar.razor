@@ -1,6 +1,6 @@
 @using Chat.Common.DTOs
 @inject IJSRuntime JS;
-<aside class="main-sidebar sidebar-dark-primary elevation-4">
+<aside class="main-sidebar sidebar-dark-primary elevation-4 vh-100">
     <!-- Brand Logo -->
     <a href="index3.html" class="brand-link">
         <img src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png" alt="AdminLTE Logo"
@@ -26,7 +26,7 @@
                 <input class="form-control form-control-sidebar" type="search" placeholder="Search" aria-label="Search">
                 <div class="input-group-append">
                     <button class="btn btn-sidebar">
-                        <i class="fas fa-search fa-fw"></i>
+                        <i class="bi bi-search"></i>
                     </button>
                 </div>
             </div>
@@ -35,10 +35,10 @@
         <!-- Sidebar Menu -->
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                <FriendList AddUserContactCallback="AddUserContactCallback"
+                <FriendList CurrentContact="CurrentContact" AddUserContactCallback="AddUserContactCallback"
                     SetUserContactCallback="SetUserContactCallback" UserChats="UserChats" />
 
-                <GroupList SetGroupContactCallback="SetGroupContactCallback"
+                <GroupList CurrentContact="CurrentContact" SetGroupContactCallback="SetGroupContactCallback"
                     AddGroupContactCallback="AddGroupContactCallback" GroupChats="GroupChats" />
             </ul>
         </nav>
@@ -57,6 +57,9 @@
 
     [CascadingParameter]
     public UserDTO CurrentUser { get; set; } = new();
+
+    [Parameter]
+    public BaseDTO? CurrentContact { get; set; } = new();
 
     [Parameter]
     public EventCallback<string> OnClickContactCallback { get; set; }

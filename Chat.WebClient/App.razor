@@ -18,9 +18,9 @@
         {
             <CascadingValue Value="_currentUser">
                 <NavBar />
-                <ContactList UserChats="_userChats" GroupChats="_groupChats" AddUserContactCallback="AddUserContact"
-                    AddGroupContactCallback="AddGroupContact" SetUserContactCallback="SetUserContact"
-                    SetGroupContactCallback="SetGroupContact" />
+                <SideBar CurrentContact="_currentContact" UserChats="_userChats" GroupChats="_groupChats"
+                    AddUserContactCallback="AddUserContact" AddGroupContactCallback="AddGroupContact"
+                    SetUserContactCallback="SetUserContact" SetGroupContactCallback="SetGroupContact" />
 
                 <div class="content-wrapper">
                     @if (_currentContact is UserDTO contact)

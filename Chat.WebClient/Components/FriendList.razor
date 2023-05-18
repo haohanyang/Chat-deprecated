@@ -4,19 +4,19 @@
 
 <li class="nav-item">
     <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-tachometer-alt"></i>
+        <i class="nav-icon bi bi-person-fill nav-icon"></i>
         @if (_isLoading || _errorMessage != null)
         {
             <p>
                 Friends
-                <i class="right fas fa-angle-left"></i>
+                <i class="right bi bi-caret-left-fill"></i>
             </p>
         }
         else
         {
             <p>
                 Friends(@UserChats.Count)
-                <i class="right fas fa-angle-left"></i>
+             <i class="right bi bi-caret-left-fill"></i>
             </p>
         }
     </a>
@@ -46,14 +46,16 @@
                 var unreadMessagesCount = messages.Where(e => !e.WasRead).ToList().Count;
                 if (contact.Username != CurrentUser.Username)
                 {
-                    <li class="nav-item">
-                        <div class="user-panel mt-2 pb-1 mb-2 d-flex align-items-center"
+                    var c = CurrentContact?.ClientId == contact.ClientId ? "bg-light rounded" : "";
+                    var d = CurrentContact?.ClientId == contact.ClientId ? "text-dark" : "";
+                    <li class="nav-item @c">
+                        <div class="user-panel mt-1 pb-1 mb-1 d-flex align-items-center"
                         @onclick="() => SetUserContactCallback.InvokeAsync(contact.Username)">
                             <div class="image">
                                 <img src="@contact.AvatarUrl" class="img-circle elevation-2" alt="User Image">
                             </div>
                             <div class="info">
-                                <a href="#" class="d-block">@contact.Name</a>
+                                <a href="#" class="d-block @d">@contact.Name</a>
                                 @if (contact.IsOnline)
                                 {
                                     <span class="badge badge-success">Online</span>
@@ -81,6 +83,9 @@
 @code {
     [CascadingParameter]
     public UserDTO CurrentUser { get; set; } = new();
+
+    [Parameter]
+    public BaseDTO? CurrentContact { get; set; } = new();
 
     [Parameter]
     public EventCallback<string> SetUserContactCallback { get; set; }

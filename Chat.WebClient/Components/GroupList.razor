@@ -4,19 +4,19 @@
 
 <li class="nav-item">
     <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-tachometer-alt"></i>
+        <i class="bi bi-people-fill nav-icon"></i>
         @if (_isLoading || _errorMessage != null)
         {
             <p>
                 Groups
-                <i class="right fas fa-angle-left"></i>
+                <i class="right bi bi-caret-left-fill"></i>
             </p>
         }
         else
         {
             <p>
                 Groups(@GroupChats.Count)
-                <i class="right fas fa-angle-left"></i>
+                <i class="right bi bi-caret-left-fill"></i>
             </p>
         }
     </a>
@@ -47,17 +47,21 @@
                 var messages = v.Item2;
                 var unreadMessagesCount = messages.Where(e => !e.WasRead).ToList().Count;
 
-                <li class="nav-item">
-                    <div class="user-panel mt-2 pb-1 mb-2 d-flex">
+                var c = CurrentContact?.ClientId == group.ClientId ? "bg-light rounded" : "";
+                var d = CurrentContact?.ClientId == group.ClientId ? "text-dark" : "";
+
+                <li class="nav-item @c">
+                    <div class="user-panel mt-1 pb-1 mb-2 pt-2 pb-2 d-flex"
+                    @onclick="() => SetGroupContactCallback.InvokeAsync(group.Id)">
                         <div class="image">
                             <img src="@group.AvatarUrl" class="img-circle elevation-2" alt="User Image">
                         </div>
                         <div class="info">
-                            <a href="#" class="d-block">"@group.Name"</a>
+                            <a href="#" class="d-block @d">"@group.Name"</a>
                         </div>
                         @if (unreadMessagesCount > 0)
                         {
-                            <span class="badge badge-danger align-self-center ml-auto mr-1">3</span>
+                            <span class="badge badge-danger ml-auto mr-1 align-self-center">3</span>
                         }
                     </div>
                 </li>
@@ -70,6 +74,9 @@
 
     [CascadingParameter]
     public UserDTO CurrentUser { get; set; } = new();
+
+    [Parameter]
+    public BaseDTO? CurrentContact { get; set; } = new();
 
     [Parameter]
     public EventCallback<int> SetGroupContactCallback { get; set; }

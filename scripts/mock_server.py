@@ -16,6 +16,8 @@ class UserDto:
         self.username = username
         self.avatarUrl = avatarUrl
         self.name = name
+        self.isOnline = random.choice([True, False])
+        print(self.isOnline)
 
     def toDict(self):
         return {
@@ -24,16 +26,12 @@ class UserDto:
             "avatarUrl": self.avatarUrl,
             "name": self.name,
             "clientId": "u" + self.id,
+            "isOnline": self.isOnline,
         }
 
     @staticmethod
     def fromDict(d: dict):
-        return UserDto(
-            d["id"],
-            d["username"],
-            d["name"],
-            d["avatarUrl"],
-        )
+        return UserDto(d["id"], d["username"], d["name"], d["avatarUrl"])
 
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, UserDto):
@@ -91,6 +89,8 @@ class UserMessageDto:
         self.receiver = receiver
         self.content = content
         self.time = time
+        self.wasRead = False
+        self.wasDelivered = False
 
     def toDict(self):
         return {
@@ -99,6 +99,8 @@ class UserMessageDto:
             "receiver": self.receiver.toDict(),
             "content": self.content,
             "time": self.time,
+            "wasRead": False,
+            "wasDelivered": False,
         }
 
     @staticmethod
@@ -126,6 +128,8 @@ class GroupMessageDto:
         self.receiver = receiver
         self.content = content
         self.time = time
+        self.wasRead = False
+        self.wasDelivered = False
 
     def toDict(self):
         return {
@@ -134,6 +138,8 @@ class GroupMessageDto:
             "receiver": self.receiver.toDict(),
             "content": self.content,
             "time": self.time,
+            "wasRead": False,
+            "wasDelivered": False,
         }
 
     @staticmethod
@@ -249,7 +255,7 @@ def updateUser(username: str):
 
 @app.route("/api/users", methods=["GET"])
 def getAllUsers():
-    time.sleep(2)
+    time.sleep(3)
     return flask.jsonify([user.toDict() for user in users])
 
 
@@ -265,7 +271,8 @@ def allJoinedGroups(username: str):
 
 # Group controller
 @app.route("/api/groups", methods=["GET"])
-def allGroups():
+def getAllGroups():
+    time.sleep(3)
     return flask.jsonify([group.toDict() for group in groups])
 
 
@@ -313,6 +320,7 @@ def getAllGroupChat():
 
 @app.route("/api/chats/user/<username1>/<username2>", methods=["GET"])
 def getUserChat(username1: str, username2: str):
+    time.sleep(2)
     chats: List[UserDto] = []
     for userMessage in userMessages:
         if (

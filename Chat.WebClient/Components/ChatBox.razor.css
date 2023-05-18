@@ -1,0 +1,16 @@
+.writing-spinner {
+    height: 10px;
+    width: 10px;
+}
+
+.direct-chat-messages {
+    height: auto;
+}
+
+.direct-chat-contacts {
+    height: auto;
+}
+
+.chat-body {
+    height: calc(100vh - 62px - 49px - 59px);
+}
