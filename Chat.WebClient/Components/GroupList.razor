@@ -1,5 +1,6 @@
 @using Chat.Common.DTOs;
 @using Chat.WebClient.Services;
+@using Chat.Common.Dtos
 @inject IHttpService HttpService;
 
 <li class="nav-item">
@@ -45,7 +46,7 @@
             {
                 var group = v.Item1;
                 var messages = v.Item2;
-                var unreadMessagesCount = messages.Where(e => !e.WasRead).ToList().Count;
+                var unreadMessagesCount = messages.Where(e => !e.Read).ToList().Count;
 
                 var c = CurrentContact?.ClientId == group.ClientId ? "bg-light rounded" : "";
                 var d = CurrentContact?.ClientId == group.ClientId ? "text-dark" : "";
@@ -54,10 +55,10 @@
                     <div class="user-panel mt-1 pb-1 mb-2 pt-2 pb-2 d-flex"
                     @onclick="() => SetGroupContactCallback.InvokeAsync(group.Id)">
                         <div class="image">
-                            <img src="@group.AvatarUrl" class="img-circle elevation-2" alt="User Image">
+                            <img src="@group.Avatar" class="img-circle elevation-2" alt="User Image">
                         </div>
                         <div class="info">
-                            <a href="#" class="d-block @d">"@group.Name"</a>
+                            <a href="#" class="d-block @d">@group.Name</a>
                         </div>
                         @if (unreadMessagesCount > 0)
                         {
@@ -73,19 +74,19 @@
 @code {
 
     [CascadingParameter]
-    public UserDTO CurrentUser { get; set; } = new();
+    public UserDto CurrentUser { get; set; } = new();
 
     [Parameter]
-    public BaseDTO? CurrentContact { get; set; } = new();
+    public ContactDto? CurrentContact { get; set; } = new();
 
     [Parameter]
     public EventCallback<int> SetGroupContactCallback { get; set; }
 
     [Parameter]
-    public EventCallback<(int, GroupDTO)> AddGroupContactCallback { get; set; }
+    public EventCallback<(int, GroupDto)> AddGroupContactCallback { get; set; }
 
     [Parameter]
-    public Dictionary<int, (GroupDTO, List<GroupMessageDTO>)> GroupChats { get; set; } = new();
+    public Dictionary<int, (GroupDto, List<GroupMessageDto>)> GroupChats { get; set; } = new();
 
     private bool _isLoading = true;
     private string? _errorMessage;

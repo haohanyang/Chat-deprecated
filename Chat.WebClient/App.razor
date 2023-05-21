@@ -4,12 +4,16 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 @inject IHttpService HttpService;
 @inject IJSRuntime JS
-@using System.Runtime.InteropServices.JavaScript
+
+@using Chat.Common.Dtos
 
 <div class="wrapper">
     @if (_loading)
     {
-        <div class="spinner-border" role="status">
+        <div class="container vh-100 d-flex justify-content-center align-items-center">
+            <div class="spinner-grow" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
         </div>
     }
     else
@@ -23,23 +27,26 @@
                     SetUserContactCallback="SetUserContact" SetGroupContactCallback="SetGroupContact" />
 
                 <div class="content-wrapper">
-                    @if (_currentContact is UserDTO contact)
+                    @if (_currentContact is UserDto contact)
                     {
                         var (_, chats) = _userChats[contact.Username];
-                        <ChatBox Chats="chats.Cast<MessageDTO>().ToList()" CurrentContact="_currentContact"
+                        <ChatBox Chats="chats.Cast<MessageDto>().ToList()" CurrentContact="_currentContact"
                             AddGroupMessage="AddGroupMessage" AddUserMessage="AddUserMessage" SetGroupMessages="SetGroupMessages"
                             SetUserMessages="SetUserMessages">
                         </ChatBox>
                     }
-                    else if (_currentContact is GroupDTO groupDto)
+                    else if (_currentContact is GroupDto groupDto)
                     {
                         var (_, chats) = _groupChats[groupDto.Id];
-                        <ChatBox Chats="chats.Cast<MessageDTO>().ToList()" CurrentContact="_currentContact"
+                        <ChatBox Chats="chats.Cast<MessageDto>().ToList()" CurrentContact="_currentContact"
                             AddGroupMessage="AddGroupMessage" AddUserMessage="AddUserMessage" SetGroupMessages="SetGroupMessages"
                             SetUserMessages="SetUserMessages">
                         </ChatBox>
                     }
                 </div>
+
+                <CreateGroupModal AddGroupContactCallback="AddGroupContact" SetGroupContactCallback="SetGroupContact" />
+                <JoinGroupModal AddGroupContactCallback="AddGroupContact" SetGroupContactCallback="SetGroupContact" />
             </CascadingValue>
         }
         else
@@ -55,11 +62,11 @@
     private HubConnection? _hubConnection;
     private string? _error;
     private bool _loading = false;
-    private Dictionary<string, (UserDTO, List<UserMessageDTO>)> _userChats = new();
-    private Dictionary<int, (GroupDTO, List<GroupMessageDTO>)> _groupChats = new();
+    private Dictionary<string, (UserDto, List<UserMessageDto>)> _userChats = new();
+    private Dictionary<int, (GroupDto, List<GroupMessageDto>)> _groupChats = new();
 
-    private UserDTO? _currentUser;
-    private BaseDTO? _currentContact;
+    private UserDto? _currentUser;
+    private ContactDto? _currentContact;
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,19 +86,19 @@
                 }
             }).Build();
 
-            _hubConnection.On<UserMessageDTO>("ReceiveUserMessage", message =>
+            _hubConnection.On<UserMessageDto>("ReceiveUserMessage", message =>
             {
                 AddUserMessage((message.Sender.Username, message));
                 this.StateHasChanged();
             });
 
-            _hubConnection.On<GroupMessageDTO>("ReceiveGroupMessage", message =>
+            _hubConnection.On<GroupMessageDto>("ReceiveGroupMessage", message =>
             {
                 AddGroupMessage((message.Receiver.Id, message));
                 this.StateHasChanged();
             });
 
-            // await _hubConnection.StartAsync();
+            await _hubConnection.StartAsync();
         }
         catch (Exception e)
         {
@@ -113,19 +120,19 @@
         _currentContact = _userChats[username].Item1;
     }
 
-    private void AddUserContact((string, UserDTO) args)
+    private void AddUserContact((string, UserDto) args)
     {
         var (username, user) = args;
-        _userChats.Add(username, (user, new List<UserMessageDTO>()));
+        _userChats.Add(username, (user, new List<UserMessageDto>()));
     }
 
-    private void AddGroupContact((int, GroupDTO) args)
+    private void AddGroupContact((int, GroupDto) args)
     {
         var (groupId, group) = args;
-        _groupChats.Add(groupId, (group, new List<GroupMessageDTO>()));
+        _groupChats.Add(groupId, (group, new List<GroupMessageDto>()));
     }
 
-    private void SetUserMessages((string, List<UserMessageDTO>) args)
+    private void SetUserMessages((string, List<UserMessageDto>) args)
     {
         var (username, messages) = args;
         if (_userChats.ContainsKey(username))
@@ -139,7 +146,7 @@
         }
     }
 
-    private void SetGroupMessages((int, List<GroupMessageDTO>) args)
+    private void SetGroupMessages((int, List<GroupMessageDto>) args)
     {
         var (groupId, messages) = args;
         if (_groupChats.ContainsKey(groupId))
@@ -153,7 +160,7 @@
         }
     }
 
-    private void AddUserMessage((string, UserMessageDTO) args)
+    private void AddUserMessage((string, UserMessageDto) args)
     {
         var (username, message) = args;
         if (_userChats.ContainsKey(username))
@@ -166,7 +173,7 @@
         }
     }
 
-    private void AddGroupMessage((int, GroupMessageDTO) args)
+    private void AddGroupMessage((int, GroupMessageDto) args)
     {
         var (groupId, message) = args;
         if (_groupChats.ContainsKey(groupId))
@@ -179,6 +186,7 @@
         }
     }
 
+
     private void SetError(string? error)
     {
         if (error == null)
@@ -188,4 +196,5 @@
         _error = error;
         _loading = false;
     }
+
 }

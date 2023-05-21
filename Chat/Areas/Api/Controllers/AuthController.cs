@@ -2,6 +2,7 @@ using System.Security.Authentication;
 using System.Security.Claims;
 using Chat.Areas.Api.Services;
 using Chat.Common.DTOs;
+using Chat.Common.Requests;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chat.Areas.Api.Controllers;
@@ -38,7 +39,7 @@ public class AuthenticationController : ControllerBase
     /// Register a new user
     /// </summary>
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegistrationRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest("Model state is invalid");

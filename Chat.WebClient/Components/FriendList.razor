@@ -1,5 +1,6 @@
 @using Chat.Common.DTOs;
 @using Chat.WebClient.Services;
+@using Chat.Common.Dtos
 @inject IHttpService HttpService;
 
 <li class="nav-item">
@@ -15,8 +16,8 @@
         else
         {
             <p>
-                Friends(@UserChats.Count)
-             <i class="right bi bi-caret-left-fill"></i>
+                Friends(@(UserChats.Count - 1))
+                <i class="right bi bi-caret-left-fill"></i>
             </p>
         }
     </a>
@@ -43,19 +44,19 @@
             {
                 var contact = v.Item1;
                 var messages = v.Item2;
-                var unreadMessagesCount = messages.Where(e => !e.WasRead).ToList().Count;
+                var unreadMessagesCount = messages.Where(e => !e.Read).ToList().Count;
                 if (contact.Username != CurrentUser.Username)
                 {
-                    var c = CurrentContact?.ClientId == contact.ClientId ? "bg-light rounded" : "";
-                    var d = CurrentContact?.ClientId == contact.ClientId ? "text-dark" : "";
-                    <li class="nav-item @c">
+                    var navItemClass = CurrentContact?.ClientId == contact.ClientId ? "nav-item bg-light rounded" : "";
+                    var nameTextClass = CurrentContact?.ClientId == contact.ClientId ? "nav-item text-dark" : "";
+                    <li class="nav-item @navItemClass">
                         <div class="user-panel mt-1 pb-1 mb-1 d-flex align-items-center"
                         @onclick="() => SetUserContactCallback.InvokeAsync(contact.Username)">
                             <div class="image">
-                                <img src="@contact.AvatarUrl" class="img-circle elevation-2" alt="User Image">
+                                <img src="@contact.Avatar" class="img-circle elevation-2" alt="User Image">
                             </div>
                             <div class="info">
-                                <a href="#" class="d-block @d">@contact.Name</a>
+                                <a href="#" class="d-block @nameTextClass">@contact.Name</a>
                                 @if (contact.IsOnline)
                                 {
                                     <span class="badge badge-success">Online</span>
@@ -68,7 +69,7 @@
                             @if (unreadMessagesCount > 0)
                             {
                                 <span class="badge badge-danger align-self-center ml-auto mr-1">
-                                    @messages.Where(e =>!e.WasRead).ToList().Count
+                                    @messages.Where(e =>!e.Read).ToList().Count
                                 </span>
                             }
 
@@ -82,19 +83,19 @@
 </li>
 @code {
     [CascadingParameter]
-    public UserDTO CurrentUser { get; set; } = new();
+    public UserDto CurrentUser { get; set; } = new();
 
     [Parameter]
-    public BaseDTO? CurrentContact { get; set; } = new();
+    public ContactDto? CurrentContact { get; set; } = new();
 
     [Parameter]
     public EventCallback<string> SetUserContactCallback { get; set; }
 
     [Parameter]
-    public EventCallback<(string, UserDTO)> AddUserContactCallback { get; set; }
+    public EventCallback<(string, UserDto)> AddUserContactCallback { get; set; }
 
     [Parameter]
-    public Dictionary<string, (UserDTO, List<UserMessageDTO>)> UserChats { get; set; } = new();
+    public Dictionary<string, (UserDto, List<UserMessageDto>)> UserChats { get; set; } = new();
 
     private bool _isLoading = true;
     private string? _errorMessage;

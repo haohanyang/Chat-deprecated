@@ -1,4 +1,5 @@
 @using Chat.Common.DTOs
+@using Chat.Common.Dtos
 @inject IJSRuntime JS;
 <aside class="main-sidebar sidebar-dark-primary elevation-4 vh-100">
     <!-- Brand Logo -->
@@ -13,7 +14,7 @@
         <!-- Sidebar user panel (optional) -->
         <div class="user-panel mt-3 pb-3 mb-3 d-flex">
             <div class="image">
-                <img src="@CurrentUser.AvatarUrl" class="img-circle elevation-2" alt="User Image">
+                <img src="@CurrentUser.Avatar" class="img-circle elevation-2" alt="User Image">
             </div>
             <div class="info">
                 <a href="#" class="d-block">@CurrentUser.Name</a>
@@ -56,30 +57,30 @@
     }
 
     [CascadingParameter]
-    public UserDTO CurrentUser { get; set; } = new();
+    public UserDto CurrentUser { get; set; } = new();
 
     [Parameter]
-    public BaseDTO? CurrentContact { get; set; } = new();
+    public ContactDto? CurrentContact { get; set; } = new();
 
     [Parameter]
     public EventCallback<string> OnClickContactCallback { get; set; }
 
     [Parameter]
-    public EventCallback<(string, UserDTO)> AddUserContactCallback { get; set; }
+    public EventCallback<(string, UserDto)> AddUserContactCallback { get; set; }
 
     [Parameter]
     public EventCallback<string> SetUserContactCallback { get; set; }
 
     [Parameter]
-    public EventCallback<(int, GroupDTO)> AddGroupContactCallback { get; set; }
+    public EventCallback<(int, GroupDto)> AddGroupContactCallback { get; set; }
 
     [Parameter]
     public EventCallback<int> SetGroupContactCallback { get; set; }
 
     [Parameter]
-    public Dictionary<string, (UserDTO, List<UserMessageDTO>)> UserChats { get; set; } = new();
+    public Dictionary<string, (UserDto, List<UserMessageDto>)> UserChats { get; set; } = new();
 
     [Parameter]
-    public Dictionary<int, (GroupDTO, List<GroupMessageDTO>)> GroupChats { get; set; } = new();
+    public Dictionary<int, (GroupDto, List<GroupMessageDto>)> GroupChats { get; set; } = new();
 
 }

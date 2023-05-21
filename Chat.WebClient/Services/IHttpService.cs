@@ -1,3 +1,4 @@
+using Chat.Common.Dtos;
 using Chat.Common.DTOs;
 
 namespace Chat.WebClient.Services;
@@ -6,16 +7,21 @@ public interface IHttpService
 {
     public string GetServerUrl();
     public string? GetAccessToken();
-    public Task<IEnumerable<UserDTO>> GetAllUserContacts();
+    public Task<IEnumerable<UserDto>> GetAllUserContacts();
 
-    public Task<IEnumerable<GroupDTO>> GetAllGroupContacts(string username);
+    public Task<IEnumerable<GroupDto>> GetAllGroupContacts(string username);
 
-    public Task<List<UserMessageDTO>> GetUserChat(string username1, string username2);
-    public Task<List<GroupMessageDTO>> GetGroupChat(int groupId);
+    public Task<List<UserMessageDto>> GetUserChat(string username1, string username2);
+    public Task<List<GroupMessageDto>> GetGroupChat(int groupId);
 
-    public Task SendUserMessage(UserMessageDTO message);
+    public Task SendUserMessage(UserMessageDto message);
 
-    public Task SendGroupMessage(GroupMessageDTO message);
+    public Task SendGroupMessage(GroupMessageDto message);
 
-    public Task<UserDTO> GetCurrentUser();
+    public Task<UserDto> GetCurrentUser();
+
+    public Task<GroupDto> CreateGroup(string username, string name);
+    public Task<MembershipDto> JoinGroup(string username, int groupId);
+
+    public Task<GroupDto?> GetGroup(int groupId);
 }

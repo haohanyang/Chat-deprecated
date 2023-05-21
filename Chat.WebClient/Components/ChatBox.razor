@@ -1,12 +1,13 @@
 @using Chat.WebClient.Services;
 @using Chat.Common.DTOs;
+@using Chat.Common.Dtos
 @inject IHttpService HttpService;
 @inject IJSRuntime JS;
 <div class="content p-0">
     <div class="container-fluid p-0">
         <div class="card card-danger direct-chat card-outline border-top-0">
             <div class="card-header">
-                @if (@CurrentContact is UserDTO user)
+                @if (@CurrentContact is UserDto user)
                 {
                     <h3 class="card-title text-bold">@CurrentContact.Name</h3>
                     <span class="text-muted ml-1">@@ @user.Username</span>
@@ -19,9 +20,10 @@
                         <span class="badge bg-secondary ml-1">Offline</span>
                     }
                 }
-                else if (CurrentContact is GroupDTO group_)
+                else if (CurrentContact is GroupDto group_)
                 {
                     <h3 class="card-title text-bold">@group_.Name</h3>
+                    <span class="text-muted ml-1">@@ @group_.Id</span>
                     <span class="text-muted ml-1">
                     @group_.Members.Count members
                 </span>
@@ -56,22 +58,23 @@
                             @if (message.Sender.Id != CurrentUser.Id)
                             {
                                 <div class="direct-chat-msg px-2">
-                                    <img class="direct-chat-img" src="@message.Sender.AvatarUrl" alt="avatar">
+                                    <img class="direct-chat-img" src="@message.Sender.Avatar" alt="avatar">
                                     <div class="direct-chat-text">
                                         <span class="text-bold">@message.Sender.Name</span>
+                                        <span class="text-muted small"> @message.Sender.Username</span>
                                         <p class="mb-0">@message.Content</p>
-                                        <span class="float-right text-muted mt-2">@message.Time.ToString("dd MMMM H:mm")</span>
+                                        <span class="float-right text-muted mt-2">@message.CreatedAt.ToString("dd MMMM H:mm")</span>
                                     </div>
                                 </div>
                             }
                             else
                             {
                                 <div class="direct-chat-msg right">
-                                    <img class="direct-chat-img" src="@message.Sender.AvatarUrl" alt="avatar">
+                                    <img class="direct-chat-img" src="@message.Sender.Avatar" alt="avatar">
                                     <div class="direct-chat-text bg-primary border-0">
                                         <p class="text-right text-bold mb-0">@message.Sender.Name</p>
                                         <p class="text-right mb-0">@message.Content</p>
-                                        <span class="float-left text-muted mt-2">@message.Time.ToString("dd MMMM H:mm")</span>
+                                        <span class="float-left text-muted mt-2">@message.CreatedAt.ToString("dd MMMM H:mm")</span>
                                     </div>
                                 </div>
                             }
@@ -80,7 +83,7 @@
                 }
 
                 <!-- Group members -->
-                @if (CurrentContact is GroupDTO _group)
+                @if (CurrentContact is GroupDto _group)
                 {
                     <div class="direct-chat-contacts">
                         <ul class="contacts-list">
@@ -88,11 +91,15 @@
                             {
                                 <li>
                                     <a href="#">
-                                        <img class="contacts-list-img" src="@member.AvatarUrl">
+                                        <img class="contacts-list-img" src="@member.Avatar">
                                         <div class="contacts-list-info">
                                             <span class="contacts-list-name">
                                                 @member.Name
-                                                <small class="contacts-list-date float-right">2/28/2015</small>
+                                                @if (member.Username == _group.Creator.Username)
+                                                {
+                                                    <span class="badge badge-warning ml-1">Admin</span>
+                                                }
+                                                <small class="contacts-list-date float-right"></small>
                                             </span>
                                             @if (member.IsOnline)
                                             {
@@ -119,12 +126,8 @@
                         <input type="text" name="message" placeholder="Type Message ..." class="form-control"
                         @bind="@_input">
                         <span class="input-group-append">
-                            @{
-                                var sendButtonClass = "btn btn-primary" + (_sending || _loading ?
-                                "disabled" : "");
-                            }
-                            <input type="submit" class="form-control @sendButtonClass" @onclick:preventDefault="true"
-                            @onclick="@SendMessage" value="Send" />
+                            <input type="submit" class="form-control btn btn-primary" disabled="@(_sending || _loading)"
+                            @onclick:preventDefault="true" @onclick="@SendMessage" value="Send" />
                         </span>
                     </div>
                 </form>
@@ -136,29 +139,29 @@
 
 @code {
     [Parameter]
-    public BaseDTO CurrentContact { get; set; } = new();
+    public ContactDto CurrentContact { get; set; } = new();
 
-    private BaseDTO _currentContact = new();
-
-    [Parameter]
-    public List<MessageDTO> Chats { get; set; } = new();
+    private ContactDto _currentContact = new();
 
     [Parameter]
-    public EventCallback<(string, UserMessageDTO)> AddUserMessage { get; set; }
+    public List<MessageDto> Chats { get; set; } = new();
 
     [Parameter]
-    public EventCallback<(int, GroupMessageDTO)> AddGroupMessage { get; set; }
-
+    public EventCallback<(string, UserMessageDto)> AddUserMessage { get; set; }
 
     [Parameter]
-    public EventCallback<(string, List<UserMessageDTO>)> SetUserMessages { get; set; }
+    public EventCallback<(int, GroupMessageDto)> AddGroupMessage { get; set; }
 
 
     [Parameter]
-    public EventCallback<(int, List<GroupMessageDTO>)> SetGroupMessages { get; set; }
+    public EventCallback<(string, List<UserMessageDto>)> SetUserMessages { get; set; }
+
+
+    [Parameter]
+    public EventCallback<(int, List<GroupMessageDto>)> SetGroupMessages { get; set; }
 
     [CascadingParameter]
-    public UserDTO CurrentUser { get; set; } = new();
+    public UserDto CurrentUser { get; set; } = new();
 
     private bool _loading = false;
     private bool _sending = false;
@@ -180,12 +183,12 @@
             _loading = true;
             try
             {
-                if (CurrentContact is UserDTO userDto)
+                if (CurrentContact is UserDto userDto)
                 {
                     var messages = await HttpService.GetUserChat(CurrentUser.Username, userDto.Username);
                     await SetUserMessages.InvokeAsync((userDto.Username, messages));
                 }
-                else if (CurrentContact is GroupDTO groupDto)
+                else if (CurrentContact is GroupDto groupDto)
                 {
                     var messages = await HttpService.GetGroupChat(groupDto.Id);
                     await SetGroupMessages.InvokeAsync((groupDto.Id, messages));
@@ -215,27 +218,26 @@
         try
         {
             _sending = true;
-            if (_currentContact is UserDTO userDto)
+            if (_currentContact is UserDto userDto)
             {
-                var message = new UserMessageDTO
+                var message = new UserMessageDto
                     {
                         Content = _input,
                         Sender = CurrentUser,
                         Receiver = userDto,
-                        Time = DateTime.Now
+                        CreatedAt = DateTime.Now
                     };
                 await HttpService.SendUserMessage(message);
                 await AddUserMessage.InvokeAsync((userDto.Username, message));
                 await JS.InvokeVoidAsync("ScrollDownToChatBottom");
             }
-            else if (_currentContact is GroupDTO groupDto)
+            else if (_currentContact is GroupDto groupDto)
             {
-                var message = new GroupMessageDTO
+                var message = new GroupMessageDto
                     {
                         Content = _input,
                         Sender = CurrentUser,
                         Receiver = groupDto,
-                        Time = DateTime.Now
                     };
                 await HttpService.SendGroupMessage(message);
                 await AddGroupMessage.InvokeAsync((groupDto.Id, message));
