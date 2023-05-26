@@ -20,19 +20,31 @@ public class ChatController : Controller
     public async Task<IActionResult> Index()
     {
         var model = new ChatViewModel();
-        var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (username != null)
         {
             try
             {
                 var user = await _userService.GetUser(username);
-                model.CurrentUser = user.ToDto();
+                if (user == null)
+                {
+                    _logger.LogError("User {} has valid token but does not exist in the database", username);
+                } 
+                model.CurrentUser = user;
             }
             catch (Exception e)
             {
                 _logger.LogError("Failed to get current user with unexpected error:{}" + e.Message);
             }
         }
-        return View(model);
+
+        if (model.CurrentUser != null)
+        {
+            Response.StatusCode = Unauthorized().StatusCode;
+            return View("AuthView");
+        }
+        
+        return View("UnAuthView");
+        
     }
 }

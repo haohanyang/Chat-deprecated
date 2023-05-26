@@ -32,7 +32,7 @@ public class ChatController : ControllerBase
     /// Get all messages between the current user and another user with the given username
     /// </summary>
     [Authorize]
-    [HttpGet("user/{username1}/{username2}")]
+    [HttpGet("users/{username1}/{username2}")]
     public async Task<IActionResult> GetUserChat([FromRoute(Name = "username1")] string username1,
         [FromRoute(Name = "username2")] string username2)
     {
@@ -59,7 +59,7 @@ public class ChatController : ControllerBase
     /// Get all messages of the group
     /// </summary>
     [Authorize]
-    [HttpGet("group/{group_id:int}")]
+    [HttpGet("groups/{group_id:int}")]
     public async Task<IActionResult> GetGroupChat([FromRoute(Name = "group_id")] int id)
     {
         try
@@ -82,8 +82,8 @@ public class ChatController : ControllerBase
     /// Send a message to another user
     /// </summary>
     [Authorize]
-    [HttpPost("user/message")]
-    public async Task<IActionResult> SendUserMessage([FromBody] UserMessageDTO message)
+    [HttpPost("users")]
+    public async Task<IActionResult> SendUserMessage([FromBody] UserMessageDto message)
     {
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         if (username != message.Sender.Username)
@@ -114,8 +114,8 @@ public class ChatController : ControllerBase
     /// Send a message to a group
     /// </summary>
     [Authorize]
-    [HttpPost("group/message")]
-    public async Task<ActionResult> SendGroupMessage([FromBody] GroupMessageDTO message)
+    [HttpPost("groups")]
+    public async Task<ActionResult> SendGroupMessage([FromBody] GroupMessageDto message)
     {
 
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;

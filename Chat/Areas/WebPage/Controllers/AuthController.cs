@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Chat.Common.DTOs;
 using System.Text.Json;
 using System.Security.Claims;
+using Chat.Common.Requests;
+
 namespace Chat.Areas.WebPage.Controllers;
 
 [Area("WebPage")]
@@ -32,7 +34,7 @@ public class AuthController : Controller
         model.Error = null;
         try
         {
-            var token = await _userService.Login(new LoginRequest { Username = model.Username, Password = model.Password });
+            var (user, token) = await _userService.Login(new LoginRequest { Username = model.Username, Password = model.Password });
             // Set cookie
             Response.Cookies.Append("chat_access_token", token, new CookieOptions()
             {
@@ -41,14 +43,13 @@ public class AuthController : Controller
                 SameSite = SameSiteMode.Strict
             });
 
-            TempData["CurrentUser"] = JsonSerializer.Serialize(new UserDTO { Username = model.Username });
+            TempData["CurrentUser"] = JsonSerializer.Serialize(user);
             return RedirectToAction("Index", "Home");
         }
-
         catch (AuthenticationException e)
         {
             model.Error = "The username or password is incorrect.";
-            Response.StatusCode = Unauthorized().StatusCode;
+            Response.StatusCode = 401;
             return View(model);
         }
         catch (Exception e)
@@ -61,31 +62,43 @@ public class AuthController : Controller
     }
 
     [HttpGet]
-    public IActionResult Login()
+    public async Task<IActionResult> Login()
     {
         var model = new LoginViewModel();
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (username != null)
         {
-            model.CurrentUser = new UserDTO { Username = username };
-            model.Error = "You are already logged in.";
+            try
+            {
+                var user = await _userService.GetUser(username);
+                if (user == null)
+                {
+                    _logger.LogError("User {} has valid token but not found in the database", username);
+                }
+                model.CurrentUser = user;
+                model.Error = "You are already logged in.";
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Failed to get user {} with unexpected error: {}", username, e.Message);
+            }
         }
         return View(model);
     }
-
-    /// TODO: fix
+    
     [HttpPost]
     public IActionResult Logout()
     {
         if (Request.Cookies["chat_access_token"] != null)
         {
             Response.Cookies.Delete("chat_access_token");
-            TempData["RedirectMessage"] = JsonSerializer.Serialize(new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "You have logged out." });
+            TempData["RedirectMessage"] = JsonSerializer.Serialize(
+                new RedirectMessage { Type = RedirectMessageType.Success, Message = "You have logged out." });
         }
         else
         {
-            _logger.LogInformation("No kooci");
-            TempData["RedirectMessage"] = JsonSerializer.Serialize(new RedirectMessage { Type = RedirectMessageType.ERROR, Message = "You haven't logged in." });
+            TempData["RedirectMessage"] = JsonSerializer.Serialize(
+                new RedirectMessage { Type = RedirectMessageType.Error, Message = "You haven't logged in." });
         }
         return RedirectToAction("Index", "Home");
     }
@@ -97,7 +110,7 @@ public class AuthController : Controller
         var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (username != null)
         {
-            model.CurrentUser = new UserDTO { Username = username };
+            model.CurrentUser = new UserDto { Username = username };
         }
         return View(model);
     }
@@ -114,7 +127,7 @@ public class AuthController : Controller
         try
         {
             var result = await _userService.Register(
-                new RegistrationRequest
+                new RegisterRequest()
                 {
                     Username = model.Username,
                     Email = model.Email,
@@ -124,7 +137,8 @@ public class AuthController : Controller
                 });
             if (result.Succeeded)
             {
-                TempData["RedirectMessage"] = JsonSerializer.Serialize(new RedirectMessage { Type = RedirectMessageType.SUCCESS, Message = "The account was successfully created." });
+                TempData["RedirectMessage"] = JsonSerializer.Serialize(
+                    new RedirectMessage { Type = RedirectMessageType.Success, Message = "The account was successfully created." });
                 return RedirectToAction("Index", "Home");
             }
             var errors = result.Errors.Select(e => e.Description).ToList();

@@ -6,6 +6,7 @@ using System.Text;
 using Chat.Areas.Api.Data;
 using Chat.Areas.Api.Models;
 using Chat.Common.DTOs;
+using Chat.Common.Requests;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -30,40 +31,22 @@ public class UserService : IUserService
         var users = await _dbContext.Users.ToListAsync();
         return users;
     }
-
-    public async Task<bool> UserExists(string username)
+    
+    public async Task<UserDto?> GetUser(string username)
     {
         var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
-        return user != null;
+        return user?.ToDto();
     }
 
-    public async Task<User> GetUser(string username)
-    {
-        var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
-        if (user == null)
-        {
-            throw new ArgumentException($"User {username} doesn't exist");
-        }
-        return user;
-    }
 
-    /// <summary>
-    ///     Create the specified user with given username and password
-    /// </summary>
-    /// <returns>The <see cref="IdentityResult" /> that indicates success or failure.</returns>
-    public async Task<IdentityResult> Register(RegistrationRequest request)
+    public async Task<IdentityResult> Register(RegisterRequest request)
     {
 
-        if ((await _userManager.FindByNameAsync(request.Username)) != null)
+        if (await _userManager.FindByNameAsync(request.Username) != null)
         {
             throw new ArgumentException("Username " + request.Username + " already exists");
         }
-
-        if ((await _userManager.FindByEmailAsync(request.Email)) != null)
-        {
-            throw new ArgumentException("Email " + request.Username + " already exists");
-        }
-
+        
         var result = await _userManager.CreateAsync(
             new User
             {
@@ -71,7 +54,7 @@ public class UserService : IUserService
                 Email = request.Email,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
-                AvatarUrl = "https://api.dicebear.com/6.x/initials/svg?seed=" + request.FirstName[0] + request.LastName[0]
+                Avatar = "https://api.dicebear.com/6.x/initials/svg?seed=" + request.FirstName[0] + request.LastName[0]
             },
             request.Password);
         return result;
@@ -81,14 +64,14 @@ public class UserService : IUserService
     ///     Tries to login with the given username and password. Retrieves the token if the authentication succeeds.
     /// </summary>
     /// <returns>A JSON Web Token that authenticates the user</returns>
-    public async Task<string> Login(LoginRequest request)
+    public async Task<(UserDto, string)> Login(LoginRequest request)
     {
         var user = await _userManager.FindByNameAsync(request.Username);
         if (user == null) throw new AuthenticationException("The username or password is incorrect.");
 
         var result = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!result) throw new AuthenticationException("The username or password is incorrect.");
-        return GenerateToken(user);
+        return (user.ToDto(), GenerateToken(user));
     }
 
     /// <summary>
@@ -108,8 +91,7 @@ public class UserService : IUserService
             new(JwtRegisteredClaimNames.Aud, "chat"),
             new(JwtRegisteredClaimNames.Sub, user.UserName),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
-            new (ClaimTypes.Name, user.FirstName + ";" + user.LastName)
+            new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture))
         };
 
         if (_secretKey == null)
@@ -127,11 +109,7 @@ public class UserService : IUserService
         var token = tokenHandler.WriteToken(jwtToken);
         return token;
     }
-
-    /// <summary>
-    /// Validate the given token
-    /// </summary>
-    /// <param name="token">JWT token</param>
+    
     public async Task<TokenValidationResult> ValidateToken(string token)
     {
         var tokenHandler = new JwtSecurityTokenHandler();

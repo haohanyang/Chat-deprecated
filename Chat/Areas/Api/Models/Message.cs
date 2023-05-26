@@ -12,7 +12,7 @@ public class Message
     public User Sender { get; set; } = null!;
 
     public string Content { get; set; } = string.Empty;
-    public DateTime SentTime { get; set; } = new();
+    public DateTime CreatedAt { get; set; } = new();
 }
 
 public class UserMessage : Message
@@ -20,14 +20,14 @@ public class UserMessage : Message
     public string ReceiverId { get; set; } = string.Empty;
     public User Receiver { get; set; } = null!;
 
-    public UserMessageDTO ToDto()
+    public UserMessageDto ToDto()
     {
-        return new()
+        return new UserMessageDto
         {
             Sender = Sender.ToDto(),
             Receiver = Receiver.ToDto(),
             Content = Content,
-            Time = SentTime
+            CreatedAt = CreatedAt
         };
     }
 }
@@ -36,14 +36,15 @@ public class GroupMessage : Message
 {
     public int ReceiverId { get; set; }
     public Group Receiver { get; set; } = null!;
-    public GroupMessageDTO ToDto()
+
+    public GroupMessageDto ToDto()
     {
-        return new()
+        return new GroupMessageDto
         {
             Sender = Sender.ToDto(),
             Receiver = Receiver.ToDto(),
             Content = Content,
-            Time = SentTime
+            CreatedAt = CreatedAt
         };
     }
 }

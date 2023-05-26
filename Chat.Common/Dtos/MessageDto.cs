@@ -1,20 +1,22 @@
 ﻿namespace Chat.Common.DTOs;
 
-public class MessageDTO
+public class MessageDto
 {
-    public int Id { get; set; }
-    public UserDTO Sender { get; set; } = new();
-    public DateTime Time { get; set; } = DateTime.Now;
-    public string Content { get; set; } = string.Empty;
-
+    public int Id { get; init; }
+    public UserDto Sender { get; init; } = new();
+    public DateTime CreatedAt { get; init; } = DateTime.Now;
+    public string Content { get; init; } = string.Empty;
+    public bool Read { get; set; } = true;
+    public bool Delivered { get; set; } = true;
 }
 
-public class UserMessageDTO : MessageDTO
+public class UserMessageDto : MessageDto
 {
-    public UserDTO Receiver { get; set; } = new();
+    public UserDto Receiver { get; init; } = new();
 }
 
-public class GroupMessageDTO : MessageDTO
+public class GroupMessageDto : MessageDto
 {
-    public GroupDTO Receiver { get; set; } = new();
+    public GroupDto Receiver { get; init; } = new();
+
 }

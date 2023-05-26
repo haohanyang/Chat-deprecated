@@ -41,31 +41,36 @@ class UserDto:
 
 class GroupDto:
     def __init__(
-        self, id: int, name: str, avatarUrl: str, owner: UserDto, members: List[UserDto]
+        self,
+        id: int,
+        name: str,
+        avatarUrl: str,
+        creator: UserDto,
+        members: List[UserDto],
     ):
         self.id = id
         self.name = name
         self.avatarUrl = avatarUrl
         self.members = members
-        self.owner = owner
+        self.creator = creator
 
-    def toDict(self):
+    def toDict(self) -> dict:
         return {
             "id": self.id,
             "name": self.name,
             "avatarUrl": self.avatarUrl,
             "clientId": "g" + str(self.id),
             "members": [member.toDict() for member in self.members],
-            "owner": self.owner.toDict(),
+            "creator": self.creator.toDict(),
         }
 
     @staticmethod
-    def fromDict(d: dict):
+    def fromDict(d: dict) -> "GroupDto":
         return GroupDto(
             int(d["id"]),
             d["name"],
             d["avatarUrl"],
-            UserDto.fromDict(d["owner"]),
+            UserDto.fromDict(d["creator"]),
             [UserDto.fromDict(member) for member in d["members"]],
         )
 
@@ -73,6 +78,19 @@ class GroupDto:
         if not isinstance(__value, GroupDto):
             return False
         return self.id == __value.id
+
+
+class GroupRequest:
+    def __init__(self, username: str, group: GroupDto):
+        self.username = username
+        self.group = group
+
+    def toDict(self) -> dict:
+        return {"username": self.username, "group": self.group.toDict()}
+
+    @staticmethod
+    def fromDict(d: dict) -> "GroupRequest":
+        return GroupRequest(d["username"], GroupDto.fromDict(d["group"]))
 
 
 class UserMessageDto:
@@ -174,19 +192,19 @@ if response.status_code == 200:
         )
 me = users[-1]
 
-owners = random.choices(range(len(users)), k=5)
+creators = random.choices(range(len(users)), k=5)
 groupId = 1
-for owner in owners:
+for creator in creators:
     members = random.choices(range(len(users)), k=5)
-    members.append(owner)
+    members.append(creator)
     members.append(len(users) - 1)
     members = set(members)
     groups.append(
         GroupDto(
             groupId,
-            users[owner].name + "'s Group",
-            users[owner].avatarUrl,
-            users[owner],
+            users[creator].name + "'s Group",
+            users[creator].avatarUrl,
+            users[creator],
             [users[member] for member in members],
         )
     )
@@ -278,7 +296,21 @@ def getAllGroups():
 
 @app.route("/api/groups", methods=["POST"])
 def createGroup():
-    return "not implemented yet"
+    time.sleep(3)
+    groupRequest: GroupRequest = GroupRequest.fromDict(flask.request.json)
+    group = groupRequest.group
+    group.id = len(groups)
+    user = findUser(groupRequest.username)
+    group.members.append(user)
+    groups.append(group)
+
+
+@app.route("/api/groups/members", methods=["POST"])
+def joinGroup():
+    time.sleep(3)
+    groupRequest: GroupRequest = GroupRequest.fromDict(flask.request.json)
+    group = getGroup(groupRequest.group.id)
+    group.members.append(me)
 
 
 @app.route("/api/groups/<int:groupId>", methods=["GET"])

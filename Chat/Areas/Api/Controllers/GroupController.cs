@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Chat.Common;
 using Chat.Areas.Api.Services;
+using Chat.Common.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -31,7 +32,7 @@ public class GroupController : ControllerBase
     /// </summary>
     [Authorize]
     [HttpGet]
-    public async IAsyncEnumerable<GroupDTO> GetAllGroups()
+    public async IAsyncEnumerable<GroupDto> GetAllGroups()
     {
         var groups = await _groupService.GetAllGroups();
         foreach (var group in groups)
@@ -41,22 +42,47 @@ public class GroupController : ControllerBase
     }
 
     /// <summary>
+    /// Get a group by id
+    /// </summary>
+    [HttpGet("{group_id:int}")]
+    public async Task<ActionResult> GetGroup([FromRoute(Name = "group_id")] int id)
+    {
+        try
+        {
+            var group = await _groupService.GetGroup(id);
+            if (group == null)
+            {
+                return NotFound($"Group {id} doesn't exist");
+            }
+            return Ok(group);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Getting group {} failed with unexpected error:{}", id, e.Message);
+            return StatusCode(500, "Unexpected error");
+        }
+
+    }
+
+    /// <summary>
     /// Create a group
     /// </summary>
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult> CreateGroup([FromBody] CreateGroupRequest request)
+    public async Task<ActionResult> CreateGroup([FromBody] GroupDto groupRequest)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
 
-        var groupName = request.GroupName;
         var username = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+        if (username != groupRequest.Creator.Username)
+        {
+            return BadRequest("You can only create group for yourself");
+        }
+
         try
         {
-            var id = await _groupService.CreateGroup(username, groupName);
-            _logger.LogInformation("Group {} was created by {}", groupName, username);
-            return CreatedAtAction(nameof(CreateGroup), new { GroupName = groupName, Id = id });
+            var group = await _groupService.CreateGroup(username, groupRequest.Name);
+            _logger.LogInformation("Group {} was created by {}", group.Name, username);
+            return CreatedAtAction(nameof(CreateGroup), group);
         }
         catch (ArgumentException e)
         {
@@ -64,8 +90,8 @@ public class GroupController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError("Creating group {} failed with unexpected error:{}", groupName, e.Message);
-            return BadRequest("unexpected error");
+            _logger.LogError("Creating group {} failed with unexpected error:{}", groupRequest.Name, e.Message);
+            return StatusCode(500, "Unexpected error");
         }
     }
 
@@ -73,16 +99,17 @@ public class GroupController : ControllerBase
     /// Add the user to the group
     /// </summary>
     [Authorize]
-    [HttpPost("{group_id:int}/members")]
-    public async Task<ActionResult> JoinGroup([FromRoute(Name = "group_id")] int groupId)
+    [HttpPost("{group_id:int}/memberships")]
+    public async Task<ActionResult> AddMember([FromRoute(Name = "group_id")] int groupId, [FromBody] MembershipDto membershipRequest)
     {
-        if (!ModelState.IsValid)
-            return BadRequest("Invalid model");
-
         var username = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+        if (username != membershipRequest.Member.Username)
+        {
+            return BadRequest("You can only add yourself to a group");
+        }
         try
         {
-            var membershipId = await _groupService.JoinGroup(username, groupId);
+            var membership = await _groupService.AddMember(username, groupId);
 
             // Add connections
             var connections = _connectionService.GetConnections(username);
@@ -90,16 +117,9 @@ public class GroupController : ControllerBase
             await Task.WhenAll(connections.Select(connectionId =>
                 _hubContext.Groups.AddToGroupAsync(connectionId, groupId.ToString())));
 
-            // Remind group members 
-            await _hubContext.Clients.Group(groupId.ToString()).ReceiveNotification(
-                new NotificationDTO
-                {
-                    Content = "User {} joined the group",
-                    Time = new DateTime()
-                });
-
+            // TODO: Remind group members 
             _logger.LogInformation("{} joined group {}", username, groupId);
-            return CreatedAtAction(nameof(JoinGroup), new { GroupId = groupId, Username = username, Id = membershipId });
+            return CreatedAtAction(nameof(AddMember), membership);
         }
         catch (ArgumentException e)
         {
@@ -116,8 +136,8 @@ public class GroupController : ControllerBase
     /// Remove the user from the group
     /// </summary>
     [Authorize]
-    [HttpDelete("{group_id:int}/members")]
-    public async Task<ActionResult> LeaveGroup([FromRoute(Name = "group_id")] int groupId)
+    [HttpDelete("{group_id:int}/memberships")]
+    public async Task<ActionResult> RemoveMember([FromRoute(Name = "group_id")] int groupId)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
@@ -125,17 +145,14 @@ public class GroupController : ControllerBase
         var username = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         try
         {
-            await _groupService.LeaveGroup(username, groupId);
+            await _groupService.RemoveMember(username, groupId);
 
             // Remove connections
             var connections = _connectionService.GetConnections(username);
             await Task.WhenAll(connections.Select(connectionId =>
                 _hubContext.Groups.RemoveFromGroupAsync(connectionId, groupId.ToString())));
 
-            // Remind group members 
-            await _hubContext.Clients.Group(groupId.ToString()).ReceiveNotification(
-                new NotificationDTO
-                { Content = "User @{} left the group", Time = new DateTime() });
+            // TODO: Remind group members 
             _logger.LogInformation("User {} left the group {}", username, groupId);
             return Ok("Ok");
         }
@@ -146,7 +163,7 @@ public class GroupController : ControllerBase
         catch (Exception e)
         {
             _logger.LogError("User {} failed to leave the group {} with unexpected error:{}", username, groupId, e.Message);
-            return BadRequest(e.Message);
+            return StatusCode(500, "Unexpected error");
         }
     }
 }

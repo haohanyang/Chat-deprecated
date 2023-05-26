@@ -55,9 +55,9 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .HasForeignKey(e => e.GroupId)
             .IsRequired();
         modelBuilder.Entity<Group>().
-            HasOne(e => e.Owner)
-            .WithMany(e => e.OwnedGroups)
-            .HasForeignKey(e => e.OwnerId)
+            HasOne(e => e.Creator)
+            .WithMany(e => e.CreatedGroups)
+            .HasForeignKey(e => e.CreatorId)
             .OnDelete(DeleteBehavior.NoAction);
 
         // User-message relationships

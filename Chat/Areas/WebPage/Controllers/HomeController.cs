@@ -31,16 +31,20 @@ public class HomeController : Controller
 
         if (TempData["CurrentUser"] != null)
         {
-            model.CurrentUser = JsonSerializer.Deserialize<UserDTO>((string)TempData["CurrentUser"]!);
+            model.CurrentUser = JsonSerializer.Deserialize<UserDto>((string)TempData["CurrentUser"]!);
         }
 
-        var username = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (username != null)
         {
             try
             {
                 var user = await _userService.GetUser(username);
-                model.CurrentUser = user.ToDto();
+                if (user == null)
+                {
+                    _logger.LogError("User {} has valid token but does not exist in the database", username);
+                }
+                model.CurrentUser = user;
             }
             catch (Exception e)
             {

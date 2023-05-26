@@ -16,7 +16,7 @@
             <div class="jumbotron jumbotron-fluid" style="background-color: #f4f6f9;">
                 @if (Model.RedirectMessage != null)
                 {
-                    var alert = Model.RedirectMessage.Type == RedirectMessageType.SUCCESS ? "alert-success" :
+                    var alert = Model.RedirectMessage.Type == RedirectMessageType.Success ? "alert-success" :
                     "alert-danger";
                     <div class="mx-2 alert @alert alert-dismissible fade show" role="alert">
                         @Model.RedirectMessage.Message
@@ -33,7 +33,7 @@
                         collaboration.</p>
                     @if (Model.CurrentUser != null)
                     {
-                        <h2>Welcome back,@@ @Model.CurrentUser.Username</h2>
+                        <h2>Welcome back, @Model.CurrentUser.Name.Split(" ")[0]</h2>
                         <a class="lead" href="/chat">Go to the chat</a>
                     }
                 </div>

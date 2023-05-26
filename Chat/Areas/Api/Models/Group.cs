@@ -9,22 +9,22 @@ public class Group
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
 
-    public User Owner { get; set; } = null!;
-    public string OwnerId { get; set; } = string.Empty;
-    public string AvatarUrl { get; set; } = string.Empty;
+    public User Creator { get; set; } = null!;
+    public string CreatorId { get; set; } = string.Empty;
+    public string Avatar { get; set; } = string.Empty;
 
-    public IEnumerable<Membership> Memberships { get; set; } = new List<Membership>();
-    public IEnumerable<GroupMessage> Messages { get; set; } = new List<GroupMessage>();
+    public IEnumerable<Membership> Memberships { get; } = new List<Membership>();
+    public IEnumerable<GroupMessage> Messages { get; } = new List<GroupMessage>();
 
-    public GroupDTO ToDto()
+    public GroupDto ToDto()
     {
-        return new GroupDTO
+        return new GroupDto
         {
             Id = Id,
             ClientId = "g" + Name,
             Name = Name,
-            AvatarUrl = AvatarUrl,
-            Owner = Owner.ToDto(),
+            Avatar = Avatar,
+            Creator = Creator.ToDto(),
             Members = Memberships.Select(e => e.User.ToDto()).ToList(),
         };
     }

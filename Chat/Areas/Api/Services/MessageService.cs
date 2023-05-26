@@ -15,7 +15,7 @@ public class MessageService : IMessageService
         _logger = logger;
     }
 
-    public async Task<int> SaveMessage(MessageDTO message)
+    public async Task<MessageDto> SaveMessage(MessageDto message)
     {
         var sender = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == message.Sender.Username);
 
@@ -24,7 +24,7 @@ public class MessageService : IMessageService
             throw new ArgumentException("User " + message.Sender.Username + " doesn't exist");
         }
 
-        if (message is UserMessageDTO userMessage)
+        if (message is UserMessageDto userMessage)
         {
             var receiver = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == userMessage.Receiver.Username);
             if (receiver == null)
@@ -36,15 +36,15 @@ public class MessageService : IMessageService
                 Sender = sender,
                 Receiver = receiver,
                 Content = message.Content,
-                SentTime = message.Time
+                CreatedAt = message.CreatedAt
             };
             _dbContext.UserMessages.Add(dbMessage);
             await _dbContext.SaveChangesAsync();
-            return dbMessage.Id;
+            return dbMessage.ToDto();
         }
         else
         {
-            var groupMessage = message as GroupMessageDTO;
+            var groupMessage = message as GroupMessageDto;
             var group = await _dbContext.Groups.FindAsync(groupMessage!.Receiver.Id);
             if (group == null)
             {
@@ -55,61 +55,60 @@ public class MessageService : IMessageService
                 Sender = sender,
                 Receiver = group,
                 Content = message.Content,
-                SentTime = message.Time,
+                CreatedAt = message.CreatedAt,
             };
             _dbContext.GroupMessages.Add(dbMessage);
             await _dbContext.SaveChangesAsync();
-            return dbMessage.Id;
+            return dbMessage.ToDto();
         }
     }
 
-    public async Task<IEnumerable<GroupMessageDTO>> GetGroupChat(int id)
+    public async Task<IEnumerable<GroupMessageDto>?> GetGroupChat(int id)
     {
         var group_ = await _dbContext.Groups.FindAsync(id);
         if (group_ == null)
         {
-            throw new ArgumentException($"Group {id} doesn't exist");
+            return null;
         }
         var query = from m in _dbContext.GroupMessages
                     where m.Receiver == group_
                     select m;
 
         var messages = await query.Include(m => m.Sender).ToArrayAsync();
-        return messages.Select(e => new GroupMessageDTO
+        return messages.Select(e => new GroupMessageDto
         {
             Id = e.Id,
             Sender = e.Sender.ToDto(),
             Receiver = group_.ToDto(),
             Content = e.Content,
-            Time = e.SentTime,
+            CreatedAt = e.CreatedAt,
         });
     }
 
-    public async Task<IEnumerable<UserMessageDTO>> GetUserChat(string username1, string username2)
+    public async Task<IEnumerable<UserMessageDto>?> GetUserChat(string username1, string username2)
     {
         var user1 = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username1);
         if (user1 == null)
         {
-            throw new ArgumentException("User " + username1 + " doesn't exist");
-
+            return null;
         }
         var user2 = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username2);
         if (user2 == null)
         {
-            throw new ArgumentException("User " + username2 + " doesn't exist");
+            return null;
         }
         var query = from m in _dbContext.UserMessages
                     where (m.Sender == user1 && m.Receiver == user2) || (m.Sender == user2 && m.Receiver == user1)
                     select m;
 
         var messages = await query.ToArrayAsync();
-        return messages.Select(e => new UserMessageDTO
+        return messages.Select(e => new UserMessageDto
         {
             Id = e.Id,
             Sender = e.SenderId == user1.Id ? user1.ToDto() : user2.ToDto(),
             Receiver = e.ReceiverId == user1.Id ? user1.ToDto() : user2.ToDto(),
             Content = e.Content,
-            Time = e.SentTime,
+            CreatedAt = e.CreatedAt,
         });
     }
 }

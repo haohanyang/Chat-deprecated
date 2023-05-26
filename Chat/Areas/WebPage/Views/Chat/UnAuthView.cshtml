@@ -1,0 +1,21 @@
+@using Chat.Areas.WebPage.Models;
+@model ChatViewModel;
+
+@{
+    ViewData["Title"] = "Chat";
+}
+
+@section Header {
+    @await Html.PartialAsync("_HeaderPartial.cshtml", new HeaderViewModel() { CurrentUser = null })
+}
+
+<div class="content-wrapper">
+    <div class="content">
+        <div class="container">
+            <div class="alert alert-danger mt-5" role="alert">
+                <h4 class="alert-heading">Unauthorized</h4>
+                <p>You have to <a asp-area="WebPage" asp-controller="Auth" asp-action="Login">Log in</a> to chat</p>
+            </div>
+        </div>
+    </div>
+</div>

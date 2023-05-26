@@ -8,21 +8,21 @@ public class User : IdentityUser
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
 
-    public string AvatarUrl { get; set; } = string.Empty;
-    public IEnumerable<Membership> Memberships { get; set; } = new List<Membership>();
-    public IEnumerable<UserMessage> UserMessagesSent { get; set; } = new List<UserMessage>();
-    public IEnumerable<UserMessage> UserMessagesReceived { get; set; } = new List<UserMessage>();
-    public IEnumerable<GroupMessage> GroupMessagesSent { get; set; } = new List<GroupMessage>();
-    public IEnumerable<Group> OwnedGroups { get; set; } = new List<Group>();
-    public UserDTO ToDto()
+    public string Avatar { get; set; } = string.Empty;
+    public IEnumerable<Membership> Memberships { get; } = new List<Membership>();
+    public IEnumerable<UserMessage> UserMessagesSent { get; } = new List<UserMessage>();
+    public IEnumerable<UserMessage> UserMessagesReceived { get; } = new List<UserMessage>();
+    public IEnumerable<GroupMessage> GroupMessagesSent { get; } = new List<GroupMessage>();
+    public IEnumerable<Group> CreatedGroups { get; } = new List<Group>();
+    public UserDto ToDto()
     {
-        return new UserDTO
+        return new UserDto
         {
             ClientId = "u" + UserName,
             Id = Id,
             Username = UserName!,
             Name = $"{FirstName} {LastName}",
-            AvatarUrl = AvatarUrl
+            Avatar = Avatar
         };
     }
 }

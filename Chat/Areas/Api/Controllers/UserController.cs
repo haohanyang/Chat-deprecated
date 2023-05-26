@@ -23,30 +23,6 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    /// Get the current logged-in user
-    /// </summary> 
-    [Authorize]
-    [HttpGet("me")]
-    public async Task<IActionResult> GetCurrentUser()
-    {
-        var username = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-        try
-        {
-            var user = await _userService.GetUser(username);
-            return Ok(user.ToDto());
-        }
-        catch (ArgumentException e)
-        {
-            _logger.LogError("User {} has valid token but does not exist in the database", username);
-            return BadRequest(e.Message);
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500, "Unexpected error");
-        }
-    }
-
-    /// <summary>
     /// Get the user's profile
     /// </summary>
     [HttpGet("{username}")]
@@ -55,7 +31,11 @@ public class UserController : ControllerBase
         try
         {
             var user = await _userService.GetUser(username);
-            return Ok(user.ToDto());
+            if (user == null)
+            {
+                return NotFound($"User {username} doesn't exist");
+            }
+            return Ok(user);
         }
         catch (ArgumentException e)
         {
@@ -70,7 +50,7 @@ public class UserController : ControllerBase
 
     [Authorize]
     [HttpPut("{username}")]
-    public IActionResult UpdateUser([FromBody] UserDTO user, [FromRoute] string username)
+    public IActionResult UpdateUser([FromBody] UserDto user, [FromRoute] string username)
     {
         throw new NotImplementedException();
     }
@@ -80,7 +60,7 @@ public class UserController : ControllerBase
     /// </summary>
     [Authorize]
     [HttpGet]
-    public async IAsyncEnumerable<UserDTO> GetAllUsers()
+    public async IAsyncEnumerable<UserDto> GetAllUsers()
     {
         var users = await _userService.GetAllUsers();
         foreach (var user in users)
@@ -92,13 +72,17 @@ public class UserController : ControllerBase
     /// <summary>
     /// Get all groups that the user has joined
     /// </summary>
-    [Authorize]
+
     [HttpGet("{username}/groups")]
     public async Task<IActionResult> GetJoinedGroups([FromRoute] string username)
     {
         try
         {
             var groups = await _groupService.GetJoinedGroups(username);
+            if (groups == null)
+            {
+                return NotFound($"User {username} doesn't exist");
+            }
             return Ok(groups);
         }
         catch (ArgumentException e)

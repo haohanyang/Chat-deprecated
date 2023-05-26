@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Chat.Areas.Api.Data;
 using Chat.Areas.Api.Models;
+using Chat.Common.Dtos;
 using Chat.Common.DTOs;
 
 namespace Chat.Areas.Api.Services;
@@ -9,17 +10,19 @@ public class GroupService : IGroupService
 {
     private readonly ApplicationDbContext _dbContext;
 
-    private readonly ILogger<GroupService> _logger;
 
 
-    public GroupService(ApplicationDbContext dbContext, ILogger<GroupService> logger)
+
+    public GroupService(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
-        _logger = logger;
     }
 
-    public async Task<int> CreateGroup(string username, string groupName)
+    public async Task<GroupDto> CreateGroup(string username, string groupName)
     {
+        if (groupName.Length is > 20 or < 4)
+            throw new ArgumentException("Group name must be between 4 and 20 characters");
+
         var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserName == username);
         if (user == null)
         {
@@ -29,17 +32,17 @@ public class GroupService : IGroupService
         var group = new Group
         {
             Name = groupName,
-            Owner = user,
-            AvatarUrl = "https://api.dicebear.com/6.x/initials/svg?seed=" + groupName
+            Creator = user,
+            Avatar = "https://api.dicebear.com/6.x/initials/svg?seed=" + groupName
         };
         await _dbContext.Groups.AddAsync(group);
         var membership = new Membership { User = user, Group = group };
         await _dbContext.Memberships.AddAsync(membership);
         await _dbContext.SaveChangesAsync();
-        return group.Id;
+        return group.ToDto();
     }
 
-    public async Task<int> JoinGroup(string username, int groupId)
+    public async Task<MembershipDto> AddMember(string username, int groupId)
     {
         var user = await _dbContext.Users.Include(e => e.Memberships).FirstOrDefaultAsync(e => e.UserName == username);
         var group = await _dbContext.Groups.Include(e => e.Memberships)
@@ -54,14 +57,14 @@ public class GroupService : IGroupService
         if (UserInGroup(user, group))
             throw new ArgumentException("User " + username + " is already in group " + groupId);
 
-        var membership = new Membership { User = user, Group = group };
+        var membership = new Membership { User = user, Group = group, CreatedAt = DateTime.Now };
 
         await _dbContext.AddAsync(membership);
         await _dbContext.SaveChangesAsync();
-        return membership.Id;
+        return new MembershipDto { Group = group.ToDto(), Member = user.ToDto(), Id = membership.Id };
     }
 
-    public async Task LeaveGroup(string username, int groupId)
+    public async Task RemoveMember(string username, int groupId)
     {
 
         var user = await _dbContext.Users.Include(e => e.Memberships).FirstOrDefaultAsync(e => e.UserName == username);
@@ -83,24 +86,20 @@ public class GroupService : IGroupService
     }
 
 
-    public async Task<IEnumerable<UserDTO>> GetGroupMembers(int groupId)
+    public async Task<IEnumerable<UserDto>?> GetGroupMembers(int groupId)
     {
         var group = await _dbContext.Groups.Include(e => e.Memberships).ThenInclude(e => e.User)
             .FirstOrDefaultAsync(e => e.Id == groupId);
-        if (group == null)
-            throw new ArgumentException($"Group {groupId} doesn't exist");
 
-        return group.Memberships.Select(e => e.User.ToDto());
+        return group?.Memberships.Select(e => e.User.ToDto());
     }
 
-    public async Task<IEnumerable<GroupDTO>> GetJoinedGroups(string username)
+    public async Task<IEnumerable<GroupDto>?> GetJoinedGroups(string username)
     {
-        var user = await _dbContext.Users.Include(e => e.Memberships).ThenInclude(m => m.Group)
-            .FirstOrDefaultAsync(e => e.UserName == username);
-        if (user == null)
-            throw new ArgumentException($"User {username} doesn't exist");
 
-        return user.Memberships.Select(e => e.Group.ToDto());
+        var user = await _dbContext.Users.Include(e => e.Memberships).ThenInclude(e => e.Group)
+            .FirstOrDefaultAsync(e => e.UserName == username);
+        return user?.Memberships.Select(e => e.Group.ToDto());
     }
 
     private bool UserInGroup(User user, Group group)
@@ -113,23 +112,18 @@ public class GroupService : IGroupService
     }
 
 
-    public async Task<bool> GroupExists(int groupId)
+    public async Task<GroupDto?> GetGroup(int groupId)
     {
-        var group = await _dbContext.Groups.FirstOrDefaultAsync(e => e.Id == groupId);
-        return group != null;
-    }
-
-    public async Task<GroupDTO> GetGroup(int groupId)
-    {
-        var group = await _dbContext.Groups.Include(e => e.Owner).FirstOrDefaultAsync(e => e.Id == groupId);
+        var group = await _dbContext.Groups.Include(e => e.Memberships).ThenInclude(e => e.User).FirstOrDefaultAsync(e => e.Id == groupId);
         if (group == null)
-            throw new ArgumentException($"Group {groupId} doesn't exist");
-
+            return null;
         return group.ToDto();
     }
 
-    public Task<IEnumerable<GroupDTO>> GetAllGroups()
+    public async Task<IEnumerable<GroupDto>> GetAllGroups()
     {
-        throw new NotImplementedException();
+        // Caution: The members of the group are not included
+        var groups = await _dbContext.Groups.Include(e => e.Creator).ToListAsync();
+        return groups.Select(group => group.ToDto());
     }
 }
