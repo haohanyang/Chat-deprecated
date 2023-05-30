@@ -1,8 +1,9 @@
 using System.Text;
-using Chat.Areas.Api.Data;
 using Chat.Areas.Api.Misc;
-using Chat.Areas.Api.Models;
-using Chat.Areas.Api.Services;
+using Chat.Services;
+using Chat.Services.Interface;
+using Chat.Data;
+using Chat.Domain;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -64,8 +65,10 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
-builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IUserChannelService, UserChannelService>();
+builder.Services.AddScoped<IGroupChannelService, GroupChannelService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddAuthentication(options =>
 {

@@ -1,7 +1,7 @@
-using Chat.Common.DTOs;
+using Chat.Common.Dto;
 namespace Chat.Common;
 public interface IChatClient
 {
-    Task ReceiveUserMessage(UserMessageDto message);
-    Task ReceiveGroupMessage(GroupMessageDto message);
+    Task ReceiveUserMessage(MessageDto message);
+    Task ReceiveGroupMessage(MessageDto message);
 }
