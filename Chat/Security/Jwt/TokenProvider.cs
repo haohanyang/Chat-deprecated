@@ -10,8 +10,6 @@ namespace Chat.Security.Jwt;
 public interface ITokenProvider
 {
     string CreateToken(IPrincipal principal, bool rememberMe);
-
-    ClaimsPrincipal TransformPrincipal(ClaimsPrincipal principal);
 }
 
 public class TokenProvider : ITokenProvider

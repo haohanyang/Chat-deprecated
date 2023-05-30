@@ -4,6 +4,7 @@ using Chat.Services;
 using Chat.Services.Interface;
 using Chat.Data;
 using Chat.Domain;
+using Chat.Areas.SignalR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;

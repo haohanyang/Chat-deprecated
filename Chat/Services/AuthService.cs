@@ -22,8 +22,7 @@ public class AuthService : IAuthService
         _userManager = userManager;
     }
 
-
-    public Task<AuthResponse> Authenticate(LoginRequest request)
+    public Task<string> Authenticate(LoginRequest request)
     {
         throw new NotImplementedException();
     }

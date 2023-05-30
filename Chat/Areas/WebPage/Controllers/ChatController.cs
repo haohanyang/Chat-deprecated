@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Chat.Areas.WebPage.Models;
-using Chat.Areas.Api.Services;
+using Chat.Services.Interface;
 using System.Security.Claims;
-using Chat.Common.DTOs;
+using Chat.Common.Dto;
 namespace Chat.Areas.WebPage.Controllers;
 
 [Area("WebPage")]

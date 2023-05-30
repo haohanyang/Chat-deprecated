@@ -7,6 +7,6 @@ namespace Chat.Services.Interface;
 public interface IAuthService
 {
     Task<UserDto> CreateUser(RegisterRequest request);
-    Task<AuthResponse> Authenticate(LoginRequest request);
+    Task<string> Authenticate(LoginRequest request);
     public Task<TokenValidationResult> ValidateToken(string token);
 }

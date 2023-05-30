@@ -23,5 +23,5 @@ public class RegisterViewModel : BaseViewModel
     [EmailAddress]
     public string Email { get; set; } = string.Empty;
 
-    public List<string> Errors { get; set; } = new();
+    public string? Error;
 }

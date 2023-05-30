@@ -2,10 +2,10 @@
 using System.Security.Claims;
 using Chat.Areas.WebPage.Models;
 using Microsoft.AspNetCore.Mvc;
-using Chat.Areas.Api.Services;
+using Chat.Services.Interface;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Chat.Common.DTOs;
+using Chat.Common.Dto;
 
 namespace Chat.Areas.WebPage.Controllers;
 

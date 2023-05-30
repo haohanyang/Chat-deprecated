@@ -81,11 +81,11 @@
                             <input type="submit" class="btn btn-primary btn-block" value="Register" />
                         </div>
 
-                        @if (Model.Errors.Count > 0)
+                        @if (Model.Error != null)
                         {
                             <div class="mt-2">
                                 <div class="alert alert-danger" role="alert">
-                                    @Model.Errors[0]
+                                    @Model.Error
                                 </div>
                             </div>
                         }
@@ -99,5 +99,4 @@
             </div>
         </div>
     </div>
-    <!-- /.content -->
 </div>
