@@ -1,11 +1,11 @@
 using System.Security.Authentication;
-using Chat.Areas.Api.Services;
+using Chat.Services.Interface;
 using Chat.Areas.WebPage.Models;
 using Microsoft.AspNetCore.Mvc;
-using Chat.Common.DTOs;
+using Chat.Common.Dto;
 using System.Text.Json;
 using System.Security.Claims;
-using Chat.Common.Requests;
+using Chat.Common.Http;
 
 namespace Chat.Areas.WebPage.Controllers;
 
@@ -13,6 +13,7 @@ namespace Chat.Areas.WebPage.Controllers;
 public class AuthController : Controller
 {
     private readonly IUserService _userService;
+    private readonly IAuthService _authService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(IUserService userService, ILogger<AuthController> logger)
@@ -34,7 +35,11 @@ public class AuthController : Controller
         model.Error = null;
         try
         {
-            var (user, token) = await _userService.Login(new LoginRequest { Username = model.Username, Password = model.Password });
+            var (user, token) = await _authService.Authenticate(new LoginRequest()
+            {
+                Username = model.Username,
+                Password = model.Password
+            });
             // Set cookie
             Response.Cookies.Append("chat_access_token", token, new CookieOptions()
             {

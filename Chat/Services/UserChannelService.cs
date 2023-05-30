@@ -99,7 +99,13 @@ public class UserChannelService : IUserChannelService
         return channel.ToDto();
     }
 
+
     public Task<IEnumerable<UserChannelDto>> GetChannels(string username)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<GroupChannelMembershipDto>> GetMemberships(int channelId)
     {
         throw new NotImplementedException();
     }

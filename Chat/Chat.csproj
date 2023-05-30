@@ -57,7 +57,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Chat.Common\Chat.Common.csproj" />
-    <ProjectReference Include="..\Chat.WebClient\Chat.WebClient.csproj" />
   </ItemGroup>
 
 </Project>
