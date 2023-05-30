@@ -182,7 +182,7 @@ app.MapAreaControllerRoute(
 app.MapAreaControllerRoute(
     "chat_route",
     "WebPage",
-    "chat/",
+    "chat/{*path}",
     new { controller = "Chat", action = "Index" }
 );
 
